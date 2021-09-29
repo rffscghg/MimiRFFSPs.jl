@@ -6,7 +6,7 @@ inputregions = dummy_input_output.Input_Region
 outputregions = sort(unique(dummy_input_output.Output_Region))
 
 m = Model()
-set_dimension!(m, :time, 2000:5:2300)
+set_dimension!(m, :time, 2000:2300)
 
 # Handle the MimiRFFSPs.SSPs component
 add_comp!(m, MimiRFFSPs.SPs, first = 2020)
@@ -29,7 +29,7 @@ run(m)
 
 # Should also work if Aggregator runs long, using backup data
 Mimi.set_first_last!(m, :RegionAggregatorSum, first = 2000)
-backup = zeros(61, 171)
+backup = zeros(301, 171)
 connect_param!(m, :RegionAggregatorSum, :input, :SPs, :population, backup, ignoreunits=true)
 
 run(m)

@@ -25,7 +25,7 @@ using MimiRFFSPs
 m = Model()
 
 # Set the time dimension for the whole model, which can run longer than an individual component if desired
-set_dimension!(m, :time, 1750:5:2300)
+set_dimension!(m, :time, 1750:2300)
 
 # Add the Sps component as imported from `MimiRFFSPs`
 add_comp!(m, MimiRFFSPs.SPs, first = 2020, last = 2300)

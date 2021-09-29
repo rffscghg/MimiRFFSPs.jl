@@ -1,5 +1,5 @@
 
-using Mimi, CSVFiles, DataFrames, Query
+using Mimi, CSVFiles, DataFrames, Query, Interpolations
 
 @defcomp SPs begin
 
@@ -28,7 +28,32 @@ using Mimi, CSVFiles, DataFrames, Query
         #   population in billions of individuals
         #   GDP in billions of $2020 USD
 
-        g_datasets[:socioeconomic] = load(joinpath(@__DIR__, "..", "..", "data", "socioeconomic", "socioeconomic_$(convert(Int, p.id)).csv")) |> DataFrame
+        data = load(joinpath(@__DIR__, "..", "..", "data", "socioeconomic", "socioeconomic_$(convert(Int, p.id)).csv")) |> DataFrame
+        data_interp = DataFrame(:year => [], :country => [], :population => [], :gdp => [])
+        all_years = collect(minimum(data.year):maximum(data.year))
+        
+        data_countries = unique(data.country)
+        country_int = indexin(data.country, data_countries)
+
+        for (c, country) in enumerate(data_countries)
+
+            country_data = data[findall(i -> i == c, country_int), :] |> DataFrame
+            population_itp = LinearInterpolation(country_data.year, country_data.population)
+            gdp_itp = LinearInterpolation(country_data.year, country_data.gdp)   
+            
+            append!(data_interp, DataFrame(
+                :year => all_years,
+                :country => fill(country, length(all_years)),
+                :population => population_itp[all_years],
+                :gdp => gdp_itp[all_years]
+            ))
+        end
+            
+        for (i, type) in enumerate([Int64, String, Float64, Float64])
+            data_interp[:,i] = convert.(type, data_interp[:,i])
+        end
+
+        g_datasets[:socioeconomic] = data_interp
 
         # Check Countries - each country found in the model countries parameter
         # must exist in the SSP socioeconomics dataframe 
