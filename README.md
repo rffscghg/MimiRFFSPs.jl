@@ -6,7 +6,7 @@ This repository holds a component using the [Mimi](https://www.mimiframework.org
 
 To add the package to your current environment, run the following command at the julia package REPL:
 ```julia
-pkg> add https://github.com/anthofflab/MimiRFR-SPs.jl.git
+pkg> add https://github.com/anthofflab/MimiRFFSPs.jl.git
 ```
 You probably also want to install the Mimi package into your julia environment, so that you can use some of the tools in there:
 ```
