@@ -1,4 +1,4 @@
-country_names = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFF-SPs_ISO.csv")) |> DataFrame
+country_names = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFFSPs_ISO.csv")) |> DataFrame
 years = collect(2020:5:2300)
 
 pop = []

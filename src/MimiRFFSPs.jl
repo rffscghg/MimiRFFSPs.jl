@@ -1,4 +1,4 @@
-module MimiRFF-SPs
+module MimiRFFSPs
 
 global g_datasets = Dict{Symbol,Any}()
 

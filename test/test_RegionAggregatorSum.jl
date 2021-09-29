@@ -1,6 +1,6 @@
-using Mimi, MimiRFF-Sps, DataFrames, CSVFiles, Query, Test
+using Mimi, MimiRFFSPs, DataFrames, CSVFiles, Query, Test
 
-dummy_input_output = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFF-Sps_dummyInputOutput.csv")) |> DataFrame
+dummy_input_output = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFFSPs_dummyInputOutput.csv")) |> DataFrame
 
 inputregions = dummy_input_output.Input_Region
 outputregions = sort(unique(dummy_input_output.Output_Region))
@@ -11,7 +11,7 @@ set_dimension!(m, :time, 2000:2010)
 set_dimension!(m, :inputregions, inputregions)
 set_dimension!(m, :outputregions, outputregions)
 
-add_comp!(m, MimiRFF-Sps.RegionAggregatorSum)
+add_comp!(m, MimiRFFSPs.RegionAggregatorSum)
 update_param!(m, :RegionAggregatorSum, :input_region_names, inputregions)
 update_param!(m, :RegionAggregatorSum, :output_region_names, outputregions)
 update_param!(m, :RegionAggregatorSum, :input, data)

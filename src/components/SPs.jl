@@ -6,7 +6,7 @@ using Mimi, CSVFiles, DataFrames, Query
     countries = Index()
 
     country_names = Parameter{String}(index=[countries]) # need the names of the countries from the dimension
-    id = Parameter(default=1)
+    id = Parameter(default=Int(1))
 
     # TODO double check units on gases, do we want any other gases or parameters?
     population      = Variable(index=[time, countries], unit="million")
@@ -28,7 +28,7 @@ using Mimi, CSVFiles, DataFrames, Query
         #   population in billions of individuals
         #   GDP in billions of $2020 USD
 
-        g_datasets[:socioeconomic] = load(joinpath(@__DIR__, "..", "..", "data", "socioeconomic", "socioeconomic_$(p.id).csv")) |> DataFrame
+        g_datasets[:socioeconomic] = load(joinpath(@__DIR__, "..", "..", "data", "socioeconomic", "socioeconomic_$(convert(Int, p.id)).csv")) |> DataFrame
 
         # Check Countries - each country found in the model countries parameter
         # must exist in the SSP socioeconomics dataframe 
@@ -45,7 +45,7 @@ using Mimi, CSVFiles, DataFrames, Query
         #   nitrous oxide emissions in MtN
         #   methane emissions in MtCH4
 
-        g_datasets[:emissions] = load(joinpath(@__DIR__, "..", "..", "data", "emissions", "emissions_$(p.id).csv")) |> DataFrame
+        g_datasets[:emissions] = load(joinpath(@__DIR__, "..", "..", "data", "emissions", "emissions_$(convert(Int, p.id)).csv")) |> DataFrame
    
     end
 
@@ -76,13 +76,13 @@ using Mimi, CSVFiles, DataFrames, Query
         # are in SP countries list
         order = indexin(p.country_names, subset.country)
 
-        v.population[t,:] = subset.pop[order]
+        v.population[t,:] = subset.population[order]
         v.gdp[t,:] = subset.gdp[order]
 
         # ----------------------------------------------------------------------
         # Emissions
 
-        subset = g_rcp_datasets[:emissions] |>
+        subset = g_datasets[:emissions] |>
                     @filter(_.year == year_label) |>
                     DataFrame
 

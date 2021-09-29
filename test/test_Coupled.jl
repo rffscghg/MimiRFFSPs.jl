@@ -1,25 +1,20 @@
-using Mimi, MimiRFF-Sps, DataFrames, CSVFiles, Query, Test
+using Mimi, MimiRFFSPs, DataFrames, CSVFiles, Query, Test
 
-dummy_input_output = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFF-Sps_dummyInputOutput.csv")) |> DataFrame
+dummy_input_output = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFFSPs_dummyInputOutput.csv")) |> DataFrame
 
 inputregions = dummy_input_output.Input_Region
 outputregions = sort(unique(dummy_input_output.Output_Region))
 
 m = Model()
-set_dimension!(m, :time, 1750:2300)
+set_dimension!(m, :time, 2000:5:2300)
 
-# Handle the MimiRFF-Sps.SSPs component
-add_comp!(m, MimiRFF-Sps.SSPs, first = 2010, last = 2300)
+# Handle the MimiRFFSPs.SSPs component
+add_comp!(m, MimiRFFSPs.SPs, first = 2020)
 set_dimension!(m, :countries, inputregions)
-update_param!(m, :SSPs, :country_names, inputregions)
+update_param!(m, :SPs, :country_names, inputregions)
 
-update_param!(m, :SSPs, :SSPmodel, "IIASA GDP")
-update_param!(m, :SSPs, :SSP, "SSP1")
-update_param!(m, :SSPs, :RCPmodel, "Leach")
-update_param!(m, :SSPs, :RCP, "RCP1.9")
-
-# Handle the MimiRFF-Sps.RegionAggregatorSum component
-add_comp!(m, MimiRFF-Sps.RegionAggregatorSum, first = 2010, last = 2300)
+# Handle the MimiRFFSPs.RegionAggregatorSum component
+add_comp!(m, MimiRFFSPs.RegionAggregatorSum, first = 2020)
 
 set_dimension!(m, :inputregions, inputregions)
 set_dimension!(m, :outputregions, outputregions)
@@ -28,13 +23,13 @@ update_param!(m, :RegionAggregatorSum, :input_region_names, inputregions)
 update_param!(m, :RegionAggregatorSum, :output_region_names, outputregions)
 update_param!(m, :RegionAggregatorSum, :input_output_mapping, dummy_input_output.Output_Region)
 
-connect_param!(m, :RegionAggregatorSum, :input, :SSPs, :population)
+connect_param!(m, :RegionAggregatorSum, :input, :SPs, :population)
 
 run(m)
 
 # Should also work if Aggregator runs long, using backup data
-Mimi.set_first_last!(m, :RegionAggregatorSum, first = 1750)
-backup = zeros(551, 171)
-connect_param!(m, :RegionAggregatorSum, :input, :SSPs, :population, backup, ignoreunits=true)
+Mimi.set_first_last!(m, :RegionAggregatorSum, first = 2000)
+backup = zeros(61, 171)
+connect_param!(m, :RegionAggregatorSum, :input, :SPs, :population, backup, ignoreunits=true)
 
 run(m)

@@ -1,4 +1,4 @@
-# MimiRFF-SPs.jl 
+# MimiRFFSPs.jl 
 
 This repository holds a component using the [Mimi](https://www.mimiframework.org) framework which provides parameters from the Resources for the Future (RFF) RFF Socioeconomic Projections (RFF SPs). These include socioeconomic (population and GDP) and emissions (CO2, CH4, and CH4), to be connected with as desired with other Mimi components and run in Mimi models.
 
@@ -15,23 +15,23 @@ pkg> add Mimi
 
 ## Running the Model
 
-The model uses the Mimi framework and it is highly recommended to read the Mimi documentation first to understand the code structure. This model presents two components, which will most often be used in tandem. The basic way to access the MimiRFF-SPs components, both `RFF-SPs` and `RegionAggregatorSum` and explore the results is the following:
+The model uses the Mimi framework and it is highly recommended to read the Mimi documentation first to understand the code structure. This model presents two components, which will most often be used in tandem. The basic way to access the MimiRFFSPs components, both `RFF-SPs` and `RegionAggregatorSum` and explore the results is the following:
 
 ```julia
 using Mimi 
-using MimiRFF-SPs
+using MimiRFFSPs
 
 # Create the a model
 m = Model()
 
 # Set the time dimension for the whole model, which can run longer than an individual component if desired
-set_dimension!(m, :time, 1750:2300)
+set_dimension!(m, :time, 1750:5:2300)
 
-# Add the Sps component as imported from `MimiRFF-SPs`
-add_comp!(m, MimiRFF-SPs.SPs, first = 2000, last = 2300)
+# Add the Sps component as imported from `MimiRFFSPs`
+add_comp!(m, MimiRFFSPs.SPs, first = 2020, last = 2300)
 
-# Set country dimension and related parameter: this should indicate all the countries you wish to pull SP data for, noting that you must provide a subset of the three-digit ISO country codes you can find here: `data/keys/MimiRFF-SPs_ISO.csv`.  In this case we will use all of them for illustrative purposes.
-all_countries = load(joinpath(@__DIR__, "data", "keys", "MimiRFF-SPs_ISO.csv")) |> DataFrame
+# Set country dimension and related parameter: this should indicate all the countries you wish to pull SP data for, noting that you must provide a subset of the three-digit ISO country codes you can find here: `data/keys/MimiRFFSPs_ISO.csv`.  In this case we will use all of them for illustrative purposes.
+all_countries = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_ISO.csv")) |> DataFrame
 set_dimension!(m, :countries, all_countries.ISO)
 update_param!(m, :SPs, :country_names, all_countries.ISO) # should match the dimension
 
@@ -52,10 +52,10 @@ Now say you want to connect the `m[:SPs, :population]` output variable to anothe
 
 ```julia
 # Start with the model `m` from above and add the component with the name `:PopulationAggregator`
-add_comp!(m, MimiRFF-SPs.RegionAggregatorSum, :PopulationAggregator, first = 2000, last = 2300)
+add_comp!(m, MimiRFFSPs.RegionAggregatorSum, :PopulationAggregator, first = 2020, last = 2300)
 
 # Bring in a dummy mapping between the countries list from the model above and our current one. Note that this DataFrame has two columns, `InputRegion` and `OutputRegion`, where `InputRegion` is identical to `all_countries.ISO` above but we will reset here for clarity.
-mapping = load(joinpath(@__DIR__, "data", "keys", "MimiRFF_SPs_dummyInputOutput.csv")) |> DataFrame
+mapping = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_dummyInputOutput.csv")) |> DataFrame
 inputregions = mapping.Input_Region
 outputregions = sort(unique(mapping.Output_Region))
 
@@ -68,8 +68,8 @@ update_param!(m, :PopulationAggregator, :input_region_names, inputregions)
 update_param!(m, :PopulationAggregator, :output_region_names, outputregions)
 update_param!(m, :PopulationAggregator, :input_output_mapping, mapping.Output_Region) # Vector with length of input regions, each element matching an output region in the output_region_names parameter (and outputregions dimension)
 
-# Make SSPs component `:population` variable the feed into the `:input` variable of the `PopulationAggregator` component
-connect_param!(m, :PopulationAggregator, :input, :SSPs, :population)
+# Make SPs component `:population` variable the feed into the `:input` variable of the `PopulationAggregator` component
+connect_param!(m, :PopulationAggregator, :input, :SPs, :population)
 
 run(m)
 
