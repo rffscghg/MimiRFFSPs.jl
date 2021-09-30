@@ -30,10 +30,10 @@ set_dimension!(m, :time, 1750:2300)
 # Add the Sps component as imported from `MimiRFFSPs`
 add_comp!(m, MimiRFFSPs.SPs, first = 2020, last = 2300)
 
-# Set country dimension and related parameter: this should indicate all the countries you wish to pull SP data for, noting that you must provide a subset of the three-digit ISO country codes you can find here: `data/keys/MimiRFFSPs_ISO.csv`.  In this case we will use all of them for illustrative purposes.
-all_countries = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_ISO.csv")) |> DataFrame
-set_dimension!(m, :country, all_countries.ISO)
-update_param!(m, :SPs, :country_names, all_countries.ISO) # should match the dimension
+# Set country dimension and related parameter: this should indicate all the countries you wish to pull SP data for, noting that you must provide a subset of the three-digit ISO country codes you can find here: `data/keys/MimiRFFSPs_ISO3.csv`.  In this case we will use all of them for illustrative purposes.
+all_countries = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_ISO3.csv")) |> DataFrame
+set_dimension!(m, :country, all_countries.ISO3)
+update_param!(m, :SPs, :country_names, all_countries.ISO3) # should match the dimension
 
 # Run the model
 run(m)
@@ -54,7 +54,7 @@ Now say you want to connect the `m[:SPs, :population]` output variable to anothe
 # Start with the model `m` from above and add the component with the name `:PopulationAggregator`
 add_comp!(m, MimiRFFSPs.RegionAggregatorSum, :PopulationAggregator, first = 2020, last = 2300)
 
-# Bring in a dummy mapping between the countries list from the model above and our current one. Note that this DataFrame has two columns, `InputRegion` and `OutputRegion`, where `InputRegion` is identical to `all_countries.ISO` above but we will reset here for clarity.
+# Bring in a dummy mapping between the countries list from the model above and our current one. Note that this DataFrame has two columns, `InputRegion` and `OutputRegion`, where `InputRegion` is identical to `all_countries.ISO3` above but we will reset here for clarity.
 mapping = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_dummyInputOutput.csv")) |> DataFrame
 inputregions = mapping.Input_Region
 outputregions = sort(unique(mapping.Output_Region))

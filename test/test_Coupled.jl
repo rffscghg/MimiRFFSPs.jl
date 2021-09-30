@@ -29,7 +29,7 @@ run(m)
 
 # Should also work if Aggregator runs long, using backup data
 Mimi.set_first_last!(m, :RegionAggregatorSum, first = 2000)
-backup = zeros(301, 171)
+backup = zeros(301, 184)
 connect_param!(m, :RegionAggregatorSum, :input, :SPs, :population, backup, ignoreunits=true)
 
 run(m)

@@ -1,23 +1,23 @@
 using Mimi, MimiRFFSPs, DataFrames, CSVFiles, Query, Test
 import MimiRFFSPs: SPs
 
-all_countries = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFFSPs_ISO.csv")) |> DataFrame
+all_countries = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFFSPs_ISO3.csv")) |> DataFrame
 
 # BASIC API
 
 m = Model()
 set_dimension!(m, :time, 2020:2300)
-set_dimension!(m, :country, all_countries.ISO)
+set_dimension!(m, :country, all_countries.ISO3)
 add_comp!(m, MimiRFFSPs.SPs)
-update_param!(m, :SPs, :country_names, all_countries.ISO)
+update_param!(m, :SPs, :country_names, all_countries.ISO3)
 
 run(m)
 
 m = Model()
 set_dimension!(m, :time, 2050:2300)
-set_dimension!(m, :country, all_countries.ISO[1:10])
+set_dimension!(m, :country, all_countries.ISO3[1:10])
 add_comp!(m, MimiRFFSPs.SPs, first = 2060, last = 2300)
-update_param!(m, :SPs, :country_names, all_countries.ISO[1:10])
+update_param!(m, :SPs, :country_names, all_countries.ISO3[1:10])
 
 run(m)
 
@@ -25,9 +25,9 @@ run(m)
 
 m = Model()
 set_dimension!(m, :time, 2019:2300)
-set_dimension!(m, :country, all_countries.ISO)
+set_dimension!(m, :country, all_countries.ISO3)
 add_comp!(m, MimiRFFSPs.SPs)
-update_param!(m, :SPs, :country_names, all_countries.ISO)
+update_param!(m, :SPs, :country_names, all_countries.ISO3)
 
 error_msg = (try eval(run(m)) catch err err end).msg
 @test occursin("Cannot run SP component in year 2019", error_msg)
@@ -49,10 +49,10 @@ id = 1
 
 m = Model()
 set_dimension!(m, :time, 2020:2300)
-set_dimension!(m, :country, all_countries.ISO)
+set_dimension!(m, :country, all_countries.ISO3)
 add_comp!(m, MimiRFFSPs.SPs)
 update_param!(m, :SPs, :id, id)
-update_param!(m, :SPs, :country_names, all_countries.ISO)
+update_param!(m, :SPs, :country_names, all_countries.ISO3)
 
 run(m)
 
@@ -70,16 +70,16 @@ socioeconomic_data = load(joinpath(@__DIR__, "..", "data", "socioeconomic", "soc
     @filter(_.year in collect(2020:5:20300)) |>
     DataFrame
 
-for country in all_countries.ISO
+for country in all_countries.ISO3
 
     pop_data_model = getdataframe(m, :SPs, :population) |>
-        @filter(_.time in collect(2020:5:2300) && _.countries == country) |>
+        @filter(_.time in collect(2020:5:2300) && _.country == country) |>
         DataFrame |>
         @orderby(:time) |>
         DataFrame
 
     gdp_data_model = getdataframe(m, :SPs, :gdp) |>
-        @filter(_.time in collect(2020:5:2300) && _.countries == country) |>
+        @filter(_.time in collect(2020:5:2300) && _.country == country) |>
         DataFrame |>
         @orderby(:time) |>
         DataFrame
