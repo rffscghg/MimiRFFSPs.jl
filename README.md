@@ -32,7 +32,7 @@ add_comp!(m, MimiRFFSPs.SPs, first = 2020, last = 2300)
 
 # Set country dimension and related parameter: this should indicate all the countries you wish to pull SP data for, noting that you must provide a subset of the three-digit ISO country codes you can find here: `data/keys/MimiRFFSPs_ISO.csv`.  In this case we will use all of them for illustrative purposes.
 all_countries = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_ISO.csv")) |> DataFrame
-set_dimension!(m, :countries, all_countries.ISO)
+set_dimension!(m, :country, all_countries.ISO)
 update_param!(m, :SPs, :country_names, all_countries.ISO) # should match the dimension
 
 # Run the model

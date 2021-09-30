@@ -10,7 +10,7 @@ set_dimension!(m, :time, 2000:2300)
 
 # Handle the MimiRFFSPs.SSPs component
 add_comp!(m, MimiRFFSPs.SPs, first = 2020)
-set_dimension!(m, :countries, inputregions)
+set_dimension!(m, :country, inputregions)
 update_param!(m, :SPs, :country_names, inputregions)
 
 # Handle the MimiRFFSPs.RegionAggregatorSum component

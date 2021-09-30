@@ -3,14 +3,14 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations
 
 @defcomp SPs begin
 
-    countries = Index()
+    country = Index()
 
-    country_names = Parameter{String}(index=[countries]) # need the names of the countries from the dimension
+    country_names = Parameter{String}(index=[country]) # need the names of the countries from the dimension
     id = Parameter(default=Int(1))
 
     # TODO double check units on gases, do we want any other gases or parameters?
-    population      = Variable(index=[time, countries], unit="million")
-    gdp             = Variable(index=[time, countries], unit="billion US\$2020/yr")
+    population      = Variable(index=[time, country], unit="million")
+    gdp             = Variable(index=[time, country], unit="billion US\$2005/yr")
 
     co2_emissions   = Variable(index=[time], unit="GtC/yr")
     ch4_emissions   = Variable(index=[time], unit="MtCH4/yr")
@@ -26,7 +26,7 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations
         # ----------------------------------------------------------------------
         # Load Socioeconomic Data as Needed
         #   population in billions of individuals
-        #   GDP in billions of $2020 USD
+        #   GDP in billions of $2005 USD
 
         data = load(joinpath(@__DIR__, "..", "..", "data", "socioeconomic", "socioeconomic_$(convert(Int, p.id)).csv")) |> DataFrame
         data_interp = DataFrame(:year => [], :country => [], :population => [], :gdp => [])

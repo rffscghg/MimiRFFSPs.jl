@@ -7,7 +7,7 @@ all_countries = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFFSPs_ISO.cs
 
 m = Model()
 set_dimension!(m, :time, 2020:2300)
-set_dimension!(m, :countries, all_countries.ISO)
+set_dimension!(m, :country, all_countries.ISO)
 add_comp!(m, MimiRFFSPs.SPs)
 update_param!(m, :SPs, :country_names, all_countries.ISO)
 
@@ -15,7 +15,7 @@ run(m)
 
 m = Model()
 set_dimension!(m, :time, 2050:2300)
-set_dimension!(m, :countries, all_countries.ISO[1:10])
+set_dimension!(m, :country, all_countries.ISO[1:10])
 add_comp!(m, MimiRFFSPs.SPs, first = 2060, last = 2300)
 update_param!(m, :SPs, :country_names, all_countries.ISO[1:10])
 
@@ -25,7 +25,7 @@ run(m)
 
 m = Model()
 set_dimension!(m, :time, 2019:2300)
-set_dimension!(m, :countries, all_countries.ISO)
+set_dimension!(m, :country, all_countries.ISO)
 add_comp!(m, MimiRFFSPs.SPs)
 update_param!(m, :SPs, :country_names, all_countries.ISO)
 
@@ -36,7 +36,7 @@ dummy_countries = ["Sun", "Rain", "Cloud"]
 
 m = Model()
 set_dimension!(m, :time, 2020:2300)
-set_dimension!(m, :countries, dummy_countries)
+set_dimension!(m, :country, dummy_countries)
 add_comp!(m, MimiRFFSPs.SPs)
 update_param!(m, :SPs, :country_names, dummy_countries) # error because countries aren't in SSP set
 
@@ -49,7 +49,7 @@ id = 1
 
 m = Model()
 set_dimension!(m, :time, 2020:2300)
-set_dimension!(m, :countries, all_countries.ISO)
+set_dimension!(m, :country, all_countries.ISO)
 add_comp!(m, MimiRFFSPs.SPs)
 update_param!(m, :SPs, :id, id)
 update_param!(m, :SPs, :country_names, all_countries.ISO)
