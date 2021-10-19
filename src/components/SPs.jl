@@ -6,7 +6,7 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
     country = Index()
 
     country_names = Parameter{String}(index=[country]) # need the names of the countries from the dimension
-    id = Parameter{Int64}(default=Int(1)) # the sample (out of 10,000) to be used
+    id = Parameter{Int64}(default=Int(6397)) # the sample (out of 10,000) to be used
 
     population  = Variable(index=[time, country], unit="million")
     deathrate   = Variable(index=[time, country], unit="deaths/1000 persons/yr")
