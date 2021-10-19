@@ -38,8 +38,9 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         # Check Countries - each country found in the model countries parameter
         # must exist in the RFF socioeconomics dataframe 
         missing_countries = []
+        unique_socioeconomic_countries = unique(socioeconomic_countries)
         for country in p.country_names
-            !(country in socioeconomic_countries) && push!(missing_countries, country)
+            !(country in unique_socioeconomic_countries) && push!(missing_countries, country)
         end
         !isempty(missing_countries) && error("All countries in countries parameter must be found in SSPs component Socioeconomic Dataframe, the following were not found: $(missing_countries)")
 
@@ -92,8 +93,9 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         # Check Countries - each country found in the model countries parameter
         # must exist in the RFF socioeconomics dataframe 
         missing_countries = []
+        unique_death_rate_countries
         for country in country_names
-            !(country in death_rate_countries) && push!(missing_countries, country)
+            !(country in unique_death_rate_countries) && push!(missing_countries, country)
         end
         !isempty(missing_countries) && error("All countries in countries parameter must be found in SSPs component Socioeconomic Dataframe, the following were not found: $(missing_countries)")
 
@@ -132,10 +134,10 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         year_label = gettime(t)
 
         # check that we only run the component where we have data
-        if !(year_label in v.data_dict[:socioeconomic].year)
+        if !(year_label in unique(v.data_dict[:socioeconomic].year))
             error("Cannot run SP component in year $(year_label), SP socioeconomic variables not available for this model and year.")
         end
-        if !(year_label in g_datasets[:emissions].year)
+        if !(year_label in unique(g_datasets[:emissions].year))
             error("Cannot run SP component in year $(year_label), SP emissions variables only available for this model and year.")
         end
 
