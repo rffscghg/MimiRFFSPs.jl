@@ -8,7 +8,7 @@ outputregions = sort(unique(dummy_input_output.Output_Region))
 m = Model()
 set_dimension!(m, :time, 2000:2300)
 
-# Handle the MimiRFFSPs.SSPs component
+# Handle the MimiRFFSPs.SPs component
 add_comp!(m, MimiRFFSPs.SPs, first = 2020)
 set_dimension!(m, :country, inputregions)
 update_param!(m, :SPs, :country_names, inputregions)
