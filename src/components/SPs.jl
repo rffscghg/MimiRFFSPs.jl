@@ -6,9 +6,8 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
     country = Index()
 
     country_names = Parameter{String}(index=[country]) # need the names of the countries from the dimension
-    id = Parameter(default=Int(1)) # the sample (out of 10,000) to be used
+    id = Parameter{Int64}(default=Int(1)) # the sample (out of 10,000) to be used
 
-    data_dict   = Variable{Dict{Symbol, Any}}()
     population  = Variable(index=[time, country], unit="million")
     deathrate   = Variable(index=[time, country], unit="deaths/1000 persons/yr")
     gdp         = Variable(index=[time, country], unit="billion US\$2005/yr")
@@ -18,10 +17,6 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
     n2o_emissions   = Variable(index=[time], unit="MtN/yr")
 
     function init(p,v,d)
-
-        # Preallocate the Dictionary holding data for this run which will be saved
-        # to v.data_dict
-        data_dict = Dict{Symbol, Any}()
 
         # ----------------------------------------------------------------------
         # Load Socioeconomic Data as Needed
@@ -42,7 +37,7 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         for country in p.country_names
             !(country in unique_socioeconomic_countries) && push!(missing_countries, country)
         end
-        !isempty(missing_countries) && error("All countries in countries parameter must be found in SSPs component Socioeconomic Dataframe, the following were not found: $(missing_countries)")
+        !isempty(missing_countries) && error("All countries in countries parameter must be found in SPs component Socioeconomic Dataframe, the following were not found: $(missing_countries)")
 
         # Preallocate the Socioeconomics DataFrame
         socioeconomic_df = DataFrame(:year => [], :country => [], :population => [], :gdp => [])
@@ -70,7 +65,9 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         socioeconomic_df.population = convert.(Float64, socioeconomic_df.population)
         socioeconomic_df.gdp = convert.(Float64, socioeconomic_df.gdp)
 
-        data_dict[:socioeconomic] = socioeconomic_df
+        # will overwrite since id will change each run, don't want to overflow
+        # memory so will replace not append
+        g_datasets[:socioeconomic] = socioeconomic_df
 
         # ----------------------------------------------------------------------
         # Load Death Rate Data as Needed
@@ -82,7 +79,7 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         if !haskey(g_datasets, :pop_trajectory_key)
             g_datasets[:pop_trajectory_key] = (load(joinpath(@__DIR__, "..", "..", "data", "keys", "sampled_pop_trajectory_numbers.csv")) |> DataFrame).x
         end
-        deathrate_trajectory_id = g_datasets[:pop_trajectory_key][p.id]
+        deathrate_trajectory_id = convert(Int64, g_datasets[:pop_trajectory_key][p.id])
         
         # Load Feather File
         t = Arrow.Table(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "death_rates", "death_rates_Trajectory$(deathrate_trajectory_id).feather"))
@@ -93,13 +90,15 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         # Check Countries - each country found in the model countries parameter
         # must exist in the RFF socioeconomics dataframe 
         missing_countries = []
-        unique_death_rate_countries
-        for country in country_names
+        unique_death_rate_countries = unique(death_rate_countries)
+        for country in p.country_names
             !(country in unique_death_rate_countries) && push!(missing_countries, country)
         end
-        !isempty(missing_countries) && error("All countries in countries parameter must be found in SSPs component Socioeconomic Dataframe, the following were not found: $(missing_countries)")
+        !isempty(missing_countries) && error("All countries in countries parameter must be found in SPs component Socioeconomic Dataframe, the following were not found: $(missing_countries)")
 
-        data_dict[:deathrate] = DataFrame(:year => death_rate_years, :country => death_rate_countries, :deathrate => death_rate_deathrate)
+        # will overwrite since id will change each run, don't want to overflow
+        # memory so will replace not append
+        g_datasets[:deathrate] = DataFrame(:year => death_rate_years, :country => death_rate_countries, :deathrate => death_rate_deathrate)
 
         # ----------------------------------------------------------------------
         # Load Emissions Data as Needed
@@ -113,9 +112,6 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
             n2o = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "N2O_Emissions_Trajectories.csv")) |> DataFrame
             co2 = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "CO2_Emissions_Trajectories.csv")) |> DataFrame
             
-            !(ch4.sample == n2o.sample == co2.sample) && error("Emissions dataframes must have the same sample ordering.")
-            !(ch4.year == n2o.year == co2.year) && error("Emissions dataframes must have the same year ordering.")
-
             g_datasets[:emissions] = DataFrame( :sample => co2.sample, 
                                                 :year => co2.year, 
                                                 :ch4 => ch4.value, 
@@ -124,9 +120,6 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
                                             )
         end
 
-        # Assign the Dictionary holding data for this run which will be saved
-        # to v.data_dict
-        v.data_dict = data_dict
     end
 
     function run_timestep(p,v,d,t)
@@ -134,11 +127,14 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         year_label = gettime(t)
 
         # check that we only run the component where we have data
-        if !(year_label in unique(v.data_dict[:socioeconomic].year))
+        if !(year_label in unique(g_datasets[:socioeconomic].year))
             error("Cannot run SP component in year $(year_label), SP socioeconomic variables not available for this model and year.")
         end
         if !(year_label in unique(g_datasets[:emissions].year))
-            error("Cannot run SP component in year $(year_label), SP emissions variables only available for this model and year.")
+            error("Cannot run SP component in year $(year_label), SP emissions variables not available for this model and year.")
+        end
+        if !(year_label in unique(g_datasets[:deathrate].year))
+            error("Cannot run SP component in year $(year_label), SP death rate variables only available for this model and year.")
         end
 
         # ----------------------------------------------------------------------
@@ -147,7 +143,7 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         # filter the dataframe for values with the year matching timestep
         # t and only the SP countries found in the model countries list,
         # already checked that all model countries are in SP countries list
-        subset = v.data_dict[:socioeconomic] |>
+        subset = g_datasets[:socioeconomic] |>
             @filter(_.year == year_label && _.country in p.country_names) |>
             DataFrame
 
@@ -162,7 +158,7 @@ using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArray
         # ----------------------------------------------------------------------
         # Death Rate
 
-        subset = v.data_dict[:deathrate] |>
+        subset = g_datasets[:deathrate] |>
             @filter(_.year == year_label) |>
             DataFrame
 

@@ -1,4 +1,4 @@
-using Mimi, MimiRFFSPs, DataFrames, CSVFiles, Query, Test
+using Mimi, MimiRFFSPs, DataFrames, CSVFiles, Query, Test, Arrow
 import MimiRFFSPs: SPs
 
 all_countries = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFFSPs_ISO3.csv")) |> DataFrame
@@ -38,14 +38,14 @@ m = Model()
 set_dimension!(m, :time, 2020:2300)
 set_dimension!(m, :country, dummy_countries)
 add_comp!(m, MimiRFFSPs.SPs)
-update_param!(m, :SPs, :country_names, dummy_countries) # error because countries aren't in SSP set
+update_param!(m, :SPs, :country_names, dummy_countries)
 
 error_msg = (try eval(run(m)) catch err err end).msg
 @test occursin("All countries in countries parameter must be found in SPs component Socioeconomic Dataframe, the following were not found:", error_msg)
 
 # VALIDATION
 
-id = 1
+id = Int(700)
 
 m = Model()
 set_dimension!(m, :time, 2020:2300)
@@ -56,19 +56,29 @@ update_param!(m, :SPs, :country_names, all_countries.ISO3)
 
 run(m)
 
-emissions_data = load(joinpath(@__DIR__, "..", "data", "emissions", "emissions_$(convert(Int, id)).csv")) |> 
-    DataFrame |>
-    @filter(_.year in collect(2020:2300)) |>
-    DataFrame
+# check emissions
 
-@test m[:SPs, :co2_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ emissions_data.co2  atol = 1e-9
-@test m[:SPs, :ch4_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ emissions_data.ch4  atol = 1e-9
-@test m[:SPs, :n2o_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ emissions_data.n2o atol = 1e-9
+ch4 = load(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "emissions", "CH4_Emissions_Trajectories.csv")) |> 
+    DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
+n2o = load(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "emissions", "N2O_Emissions_Trajectories.csv")) |> 
+    DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
+co2 = load(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "emissions", "CO2_Emissions_Trajectories.csv")) |> 
+    DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
 
-socioeconomic_data = load(joinpath(@__DIR__, "..", "data", "socioeconomic", "socioeconomic_$(convert(Int, id)).csv")) |> 
-    DataFrame |>
-    @filter(_.year in collect(2020:5:20300)) |>
-    DataFrame
+@test m[:SPs, :co2_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ co2.value atol = 1e-9
+@test m[:SPs, :ch4_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ ch4.value atol = 1e-9
+@test m[:SPs, :n2o_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ n2o.value atol = 1e-9
+
+# check socioeconomics
+
+t = Arrow.Table(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "rffsps", "run_$id.feather"))
+socio_df = DataFrame(   :Year => copy(t.Year), 
+                        :Country => copy(t.Country), 
+                        :Pop => copy(t.Pop), 
+                        :GDP => copy(t.GDP)
+                    ) |>
+                    @filter(_.Year in collect(2020:5:2300)) |>
+                    DataFrame
 
 for country in all_countries.ISO3
 
@@ -84,12 +94,44 @@ for country in all_countries.ISO3
         @orderby(:time) |>
         DataFrame
 
-    socioeconomic_data_country = socioeconomic_data |>
-        @filter(_.year in collect(2020:5:2300) && _.country == country) |>
+    socio_df_country = socio_df |>
+        @filter(_.Year in collect(2020:5:2300) && _.Country == country) |>
         DataFrame |>
-        @orderby(:year) |>
+        @orderby(:Year) |>
         DataFrame
 
-    @test pop_data_model.population  ≈ socioeconomic_data_country.population  atol = 1e-9
-    @test gdp_data_model.gdp  ≈ socioeconomic_data_country.gdp  atol = 1e-9
+    @test pop_data_model.population  ≈ socio_df_country.Pop  atol = 1e-9
+    @test gdp_data_model.gdp  ≈ socio_df_country.GDP  atol = 1e-9
+end
+
+# check death rate
+
+pop_trajectory_key = (load(joinpath(@__DIR__, "..", "data", "keys", "sampled_pop_trajectory_numbers.csv")) |> DataFrame).x
+deathrate_trajectory_id = convert(Int64, pop_trajectory_key[id])
+        
+# Load Feather File
+original_years = collect(2023:5:2300)
+t = Arrow.Table(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "death_rates", "death_rates_Trajectory$(deathrate_trajectory_id).feather"))
+deathrate_df = DataFrame(:Year => copy(t.Year), 
+                        :Country => copy(t.ISO3), 
+                        :DeathRate => copy(t.DeathRate)
+                    ) |>
+                    @filter(_.Year in original_years) |>
+                    DataFrame
+
+for country in all_countries.ISO3
+
+    deathrate_data_model = getdataframe(m, :SPs, :deathrate) |>
+        @filter(_.time in original_years && _.country == country) |>
+        DataFrame |>
+        @orderby(:time) |>
+        DataFrame
+
+    deathrate_df_country = deathrate_df |>         
+        @filter(_.Year in original_years && _.Country == country) |>
+        DataFrame |>
+        @orderby(:Year) |>
+        DataFrame
+
+    @test deathrate_data_model.deathrate  ≈ deathrate_df_country.DeathRate  atol = 1e-9
 end
