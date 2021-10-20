@@ -1,14 +1,37 @@
 
-using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArrays, IteratorInterfaceExtensions
+using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArrays
 
-function fill_socioeconomics!(source, population, gdp, country_lookup, start_year)
+function fill_socioeconomics!(source, population, gdp, country_lookup, start_year, end_year)
     for row in source
-        year_index = TimestepIndex(row.Year - start_year + 1)
-        # year_index = TimestepValue(row.Year)
-        country_index = country_lookup[row.Country]
+        if row.Year >= start_year && row.Year <= end_year
+            year_index = TimestepIndex(row.Year - start_year + 1)
+            # year_index = TimestepValue(row.Year) # current bug in Mimi
+            country_index = country_lookup[row.Country]
 
-        population[year_index, country_index] = row.Pop
-        gdp[year_index, country_index] = row.GDP
+            population[year_index, country_index] = row.Pop
+            gdp[year_index, country_index] = row.GDP
+        end
+    end
+end
+
+function fill_deathrates!(source, deathrate, country_lookup, start_year, end_year)
+    for row in source
+        if row.Year >= start_year && row.Year <= end_year
+            year_index = TimestepIndex(row.Year - start_year + 1)
+            # year_index = TimestepValue(row.Year) # current bug in Mimi
+            country_index = country_lookup[row.ISO3]
+            deathrate[year_index, country_index] = row.DeathRate
+        end
+    end
+end
+
+function fill_emissions!(source, emissions_var, sample_id, start_year, end_year)
+    for row in eachrow(source)
+        if row.year >= start_year && row.Year <= end_year && row.sample == sample_id
+            year_index = TimestepIndex(row.year - start_year + 1)
+            # year_index = TimestepValue(row.year) # current bug in Mimi
+            emissions_var[year_index] = row.value
+        end
     end
 end
 
@@ -16,7 +39,8 @@ end
 
     country = Index()
 
-    start_year = Parameter{Int}(default=Int(2020))
+    start_year = Parameter{Int}(default=Int(2020)) # year (annual) data shuold start
+    end_year = Parameter{Int}(default=Int(2300)) # year (annual) data shuold end
     country_names = Parameter{String}(index=[country]) # need the names of the countries from the dimension
     id = Parameter{Int64}(default=Int(6397)) # the sample (out of 10,000) to be used
 
@@ -30,21 +54,21 @@ end
 
     function init(p,v,d)
 
+        # add countrys to a dictionary where each country key has a value holding it's 
+        # index in country_names
+        country_lookup = Dict{String,Int}(name=>i for (i,name) in enumerate(p.country_names))
+        country_indices = d.country::Vector{Int} # helper for type stable country indices
+
         # ----------------------------------------------------------------------
-        # Load Socioeconomic Data as Needed
+        # Socioeconomic Data
         #   population in billions of individuals
         #   GDP in billions of $2005 USD
        
         # Load Feather File
         t = Arrow.Table(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "rffsps", "run_$(p.id).feather"))
+        fill_socioeconomics!(Arrow.Tables.datavaluerows(t), v.population, v.gdp, country_lookup, p.start_year, p.end_year)
 
-        country_lookup = Dict{String,Int}(name=>i for (i,name) in enumerate(p.country_names))
-
-        fill_socioeconomics!(Arrow.Tables.datavaluerows(t), v.population, v.gdp, country_lookup, p.start_year)
-
-        country_indices = d.country::Vector{Int}
-
-        for year in 2020:5:2300-5, country in country_indices
+        for year in p.start_year:5:p.end_year-5, country in country_indices
             year_as_timestep = TimestepIndex(year - p.start_year + 1)
             pop_interpolator = LinearInterpolation(Float64[year, year+5], [v.population[year_as_timestep,country], v.population[year_as_timestep+5,country]])
             gdp_interpolator = LinearInterpolation(Float64[year, year+5], [v.gdp[year_as_timestep,country], v.gdp[year_as_timestep+5,country]])
@@ -55,116 +79,51 @@ end
             end
         end        
 
-        # # ----------------------------------------------------------------------
-        # # Load Death Rate Data as Needed
-        # #   population in billions of individuals
-        # #   GDP in billions of $2005 USD
+        # ----------------------------------------------------------------------
+        # Death Rate Data
+        #   crude death rate in deaths per 1000 persons
 
-        # # key between population trajectory and death rates - each population
-        # # trajectory is assigned to one of the 1000 death rates
-        # if !haskey(g_datasets, :pop_trajectory_key)
-        #     g_datasets[:pop_trajectory_key] = (load(joinpath(@__DIR__, "..", "..", "data", "keys", "sampled_pop_trajectory_numbers.csv")) |> DataFrame).x
-        # end
-        # deathrate_trajectory_id = convert(Int64, g_datasets[:pop_trajectory_key][p.id])
+        # key between population trajectory and death rates - each population
+        # trajectory is assigned to one of the 1000 death rates
+        if !haskey(g_datasets, :pop_trajectory_key)
+            g_datasets[:pop_trajectory_key] = (load(joinpath(@__DIR__, "..", "..", "data", "keys", "sampled_pop_trajectory_numbers.csv")) |> DataFrame).PopTrajectoryID
+        end
+        deathrate_trajectory_id = convert(Int64, g_datasets[:pop_trajectory_key][p.id])
         
-        # # Load Feather File
-        # t = Arrow.Table(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "death_rates", "death_rates_Trajectory$(deathrate_trajectory_id).feather"))
-        # death_rate_years = copy(t.Year)
-        # death_rate_countries = copy(t.ISO3)
-        # death_rate_deathrate = copy(t.DeathRate)
+        # Load Feather File
+        t = Arrow.Table(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "death_rates", "death_rates_Trajectory$(deathrate_trajectory_id).feather"))
+        fill_deathrates!(Arrow.Tables.datavaluerows(t), v.deathrate, country_lookup, p.start_year, p.end_year)
+        # TODO could handle the repeating of years here instead of loading bigger files
 
-        # # Check Countries - each country found in the model countries parameter
-        # # must exist in the RFF socioeconomics dataframe 
-        # missing_countries = []
-        # unique_death_rate_countries = unique(death_rate_countries)
-        # for country in p.country_names
-        #     !(country in unique_death_rate_countries) && push!(missing_countries, country)
-        # end
-        # !isempty(missing_countries) && error("All countries in countries parameter must be found in SPs component Socioeconomic Dataframe, the following were not found: $(missing_countries)")
-
-        # # will overwrite since id will change each run, don't want to overflow
-        # # memory so will replace not append
-        # g_datasets[:deathrate] = DataFrame(:year => death_rate_years, :country => death_rate_countries, :deathrate => death_rate_deathrate)
-
-        # # ----------------------------------------------------------------------
-        # # Load Emissions Data as Needed
-        # #   carbon dioxide emissions in GtC
-        # #   nitrous oxide emissions in MtN
-        # #   methane emissions in MtCH4
+        # ----------------------------------------------------------------------
+        # Emissions Data
+        #   carbon dioxide emissions in GtC
+        #   nitrous oxide emissions in MtN
+        #   methane emissions in MtCH4
         
-        # if !haskey(g_datasets, :emissions)
-            
-        #     ch4 = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "CH4_Emissions_Trajectories.csv")) |> DataFrame
-        #     n2o = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "N2O_Emissions_Trajectories.csv")) |> DataFrame
-        #     co2 = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "CO2_Emissions_Trajectories.csv")) |> DataFrame
-            
-        #     g_datasets[:emissions] = DataFrame( :sample => co2.sample, 
-        #                                         :year => co2.year, 
-        #                                         :ch4 => ch4.value, 
-        #                                         :n2o => n2o.value, 
-        #                                         :co2 => co2.value
-        #                                     )
-        # end
+        # add data to the global dataset if it's not there
+        if !haskey(g_datasets, :ch4)
+            g_datasets[:ch4] = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "CH4_Emissions_Trajectories.csv")) |> DataFrame
+        end
+        if !haskey(g_datasets, :n2o)
+            g_datasets[:n2o] = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "N2O_Emissions_Trajectories.csv")) |> DataFrame
+        end
+        if !haskey(g_datasets, :n2o)
+            g_datasets[:co2] = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "CO2_Emissions_Trajectories.csv")) |> DataFrame
+        end
+
+        # fill in the variales
+        fill_emissions!(g_datasets[:ch4], v.ch4_emissions, p.id, p.start_year, p.end_year)
+        fill_emissions!(g_datasets[:co2], v.co2_emissions, p.id, p.start_year, p.end_year)
+        fill_emissions!(g_datasets[:n2o], v.n2o_emissions, p.id, p.start_year, p.end_year)
 
     end
 
     function run_timestep(p,v,d,t)
 
-        # year_label = gettime(t)
-
-        # # check that we only run the component where we have data
-        # if !(year_label in unique(g_datasets[:socioeconomic].year))
-        #     error("Cannot run SP component in year $(year_label), SP socioeconomic variables not available for this model and year.")
-        # end
-        # if !(year_label in unique(g_datasets[:emissions].year))
-        #     error("Cannot run SP component in year $(year_label), SP emissions variables not available for this model and year.")
-        # end
-        # if !(year_label in unique(g_datasets[:deathrate].year))
-        #     error("Cannot run SP component in year $(year_label), SP death rate variables only available for this model and year.")
-        # end
-
-        # # ----------------------------------------------------------------------
-        # # Socioeconomic
-
-        # # filter the dataframe for values with the year matching timestep
-        # # t and only the SP countries found in the model countries list,
-        # # already checked that all model countries are in SP countries list
-        # subset = g_datasets[:socioeconomic] |>
-        #     @filter(_.year == year_label && _.country in p.country_names) |>
-        #     DataFrame
-
-        # # get the ordered indices of the SP countries within the parameter 
-        # # of the model countries, already checked that all model countries
-        # # are in SP countries list
-        # order = indexin(p.country_names, subset.country)
-
-        # v.population[t,:] = subset.population[order]
-        # v.gdp[t,:] = subset.gdp[order]
-
-        # # ----------------------------------------------------------------------
-        # # Death Rate
-
-        # subset = g_datasets[:deathrate] |>
-        #     @filter(_.year == year_label) |>
-        #     DataFrame
-
-        # # get the ordered indices of the SP countries within the parameter 
-        # # of the model countries, already checked that all model countries
-        # # are in SP countries list
-        # order = indexin(p.country_names, subset.country)
-
-        # v.deathrate[t,:] = subset.deathrate[order]
-
-        # # ----------------------------------------------------------------------
-        # # Emissions
-
-        # subset = g_datasets[:emissions] |>
-        #             @filter(_.year == year_label && _.sample == p.id) |>
-        #             DataFrame
-
-        # v.co2_emissions[t] = subset.co2[1]
-        # v.ch4_emissions[t] = subset.ch4[1]
-        # v.n2o_emissions[t] = subset.n2o[1]
+        if !(gettime(t) in p.start_year:p.end_year)
+            error("Cannot run SP component in year $(gettime(t)), SP data is not available for this model and year.")
+        end
 
     end
 end
