@@ -8,7 +8,7 @@ function fill_socioeconomics!(source, population, gdp, country_lookup, start_yea
             # year_index = TimestepValue(row.Year) # current bug in Mimi
             country_index = country_lookup[row.Country]
 
-            population[year_index, country_index] = row.Pop .* 1e3 # convert thousands to millions
+            population[year_index, country_index] = row.Pop ./ 1e3 # convert thousands to millions
             gdp[year_index, country_index] = row.GDP ./ 1e3 # convert millions to billions
         end
     end
