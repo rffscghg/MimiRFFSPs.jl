@@ -1,4 +1,4 @@
-using Mimi, MimiRFFSPs, DataFrames, CSVFiles, Query, Test, Arrow
+using Mimi, MimiRFFSPs, DataFrames, CSVFiles, Query, Test, Arrow, DataDeps
 import MimiRFFSPs: SPs
 
 all_countries = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFFSPs_ISO3.csv")) |> DataFrame
@@ -59,11 +59,11 @@ run(m)
 
 # check emissions
 
-ch4 = load(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "emissions", "CH4_Emissions_Trajectories.csv")) |> 
+ch4 = load(joinpath(datadep"rffsps", "emissions", "CH4_Emissions_Trajectories.csv")) |> 
     DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
-n2o = load(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "emissions", "N2O_Emissions_Trajectories.csv")) |> 
+n2o = load(joinpath(datadep"rffsps", "emissions", "N2O_Emissions_Trajectories.csv")) |> 
     DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
-co2 = load(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "emissions", "CO2_Emissions_Trajectories.csv")) |> 
+co2 = load(joinpath(datadep"rffsps", "emissions", "CO2_Emissions_Trajectories.csv")) |> 
     DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
 
 @test m[:SPs, :co2_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ co2.value atol = 1e-9
@@ -72,7 +72,7 @@ co2 = load(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "emissions
 
 # check socioeconomics
 
-t = Arrow.Table(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "rffsps", "run_$id.feather"))
+t = Arrow.Table(joinpath(datadep"rffsps", "rffsps", "run_$id.feather"))
 socio_df = DataFrame(   :Year => copy(t.Year), 
                         :Country => copy(t.Country), 
                         :Pop => copy(t.Pop), 
@@ -112,7 +112,7 @@ deathrate_trajectory_id = convert(Int64, pop_trajectory_key[id])
         
 # Load Feather File
 original_years = collect(2023:5:2300)
-t = Arrow.Table(joinpath(@__DIR__, "..", "data", "RFFSPs_large_datafiles", "death_rates", "death_rates_Trajectory$(deathrate_trajectory_id).feather"))
+t = Arrow.Table(joinpath(datadep"rffsps", "death_rates", "death_rates_Trajectory$(deathrate_trajectory_id).feather"))
 deathrate_df = DataFrame(:Year => copy(t.Year), 
                         :Country => copy(t.ISO3), 
                         :DeathRate => copy(t.DeathRate)
