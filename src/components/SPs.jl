@@ -1,5 +1,5 @@
-
 using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArrays
+import IteratorInterfaceExtensions, Tables
 
 function fill_socioeconomics!(source, population, gdp, country_lookup, start_year, end_year)
     for row in source
@@ -26,7 +26,7 @@ function fill_deathrates!(source, deathrate, country_lookup, start_year, end_yea
 end
 
 function fill_emissions!(source, emissions_var, sample_id, start_year, end_year)
-    for row in eachrow(source)
+    for row in source
         if row.year >= start_year && row.year <= end_year && row.sample == sample_id
             year_index = TimestepIndex(row.year - start_year + 1)
             # year_index = TimestepValue(row.year) # current bug in Mimi
@@ -66,7 +66,7 @@ end
        
         # Load Feather File
         t = Arrow.Table(joinpath(datadep"rffsps", "rffsps", "run_$(p.id).feather"))
-        fill_socioeconomics!(Arrow.Tables.datavaluerows(t), v.population, v.gdp, country_lookup, p.start_year, p.end_year)
+        fill_socioeconomics!(Tables.datavaluerows(t), v.population, v.gdp, country_lookup, p.start_year, p.end_year)
 
         for year in p.start_year:5:p.end_year-5, country in country_indices
             year_as_timestep = TimestepIndex(year - p.start_year + 1)
@@ -92,7 +92,7 @@ end
         
         # Load Feather File
         t = Arrow.Table(joinpath(datadep"rffsps", "death_rates", "death_rates_Trajectory$(deathrate_trajectory_id).feather"))
-        fill_deathrates!(Arrow.Tables.datavaluerows(t), v.deathrate, country_lookup, p.start_year, p.end_year)
+        fill_deathrates!(Tables.datavaluerows(t), v.deathrate, country_lookup, p.start_year, p.end_year)
         # TODO could handle the repeating of years here instead of loading bigger files
 
         # ----------------------------------------------------------------------
@@ -113,9 +113,9 @@ end
         end
 
         # fill in the variales
-        fill_emissions!(g_datasets[:ch4], v.ch4_emissions, p.id, p.start_year, p.end_year)
-        fill_emissions!(g_datasets[:co2], v.co2_emissions, p.id, p.start_year, p.end_year)
-        fill_emissions!(g_datasets[:n2o], v.n2o_emissions, p.id, p.start_year, p.end_year)
+        fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:ch4]), v.ch4_emissions, p.id, p.start_year, p.end_year)
+        fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:co2]), v.co2_emissions, p.id, p.start_year, p.end_year)
+        fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:n2o]), v.n2o_emissions, p.id, p.start_year, p.end_year)
 
     end
 
