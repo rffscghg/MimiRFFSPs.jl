@@ -28,6 +28,7 @@ m = Model()
 set_dimension!(m, :time, 1750:2300)
 
 # Add the Sps component as imported from `MimiRFFSPs`
+
 add_comp!(m, MimiRFFSPs.SPs, first = 2020, last = 2300)
 
 # Set country dimension and related parameter: As of now this must be exactly the 184 countries in the following file, but we will add flexibility for this in the #future.
@@ -45,6 +46,8 @@ explore(m)
 emissions = m[:SPs, :gdp]
 ```
 Importantly, note that there is an optional parameter in this component, `id` which defaults to a central run's ID for debugging purposes.  This parameter to the run with ID `id` in the data.  By nature of the projections, this component should be run using a Monte Carlo Simulation sampling over the IDs in order to obtain a representative distribution of plausible outcomes. See the section below for more information.
+
+Also note that the `SPs` component has optional arguments `start_year` (default = 2020) and `end_year` (default = 2300) that can be altered to values within the 2020 - 2300 timeframe.  Timesteps must be annual as of now, but we will add flexibility to this in the future.
 
 ---
 
