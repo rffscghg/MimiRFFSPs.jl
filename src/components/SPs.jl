@@ -9,7 +9,7 @@ function fill_socioeconomics!(source, population, gdp, country_lookup, start_yea
             country_index = country_lookup[row.Country]
 
             population[year_index, country_index] = row.Pop ./ 1e3 # convert thousands to millions
-            gdp[year_index, country_index] = row.GDP ./ 1e3 # convert millions to billions
+            gdp[year_index, country_index] = row.GDP ./ 1e3 .* 0.87 # convert millions to billions; convert $2011 to $2005
         end
     end
 end
