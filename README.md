@@ -30,7 +30,7 @@ set_dimension!(m, :time, 1750:2300)
 # Add the Sps component as imported from `MimiRFFSPs`
 add_comp!(m, MimiRFFSPs.SPs, first = 2020, last = 2300)
 
-# Set country dimension and related parameter: this should indicate all the countries you wish to pull SP data for, noting that you must provide a subset of the three-digit ISO country codes you can find here: `data/keys/MimiRFFSPs_ISO3.csv`.  In this case we will use all of them for illustrative purposes.
+# Set country dimension and related parameter: As of now this must be exactly the 184 countries in the following file, but we will add flexibility for this in the #future.
 all_countries = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_ISO3.csv")) |> DataFrame
 set_dimension!(m, :country, all_countries.ISO3)
 update_param!(m, :SPs, :country_names, all_countries.ISO3) # should match the dimension
@@ -44,7 +44,7 @@ explore(m)
 # Access a specific variable
 emissions = m[:SPs, :gdp]
 ```
-Importantly, note that there is an optional parameter in this component, `id` which defaults to `1`, the "most likely" case to produce a single run [TODO decide how to choose this and explain further] for debugging purposes.  This refers to the run with ID `1` in `data/projections`.  By nature of the projections, this component should be run using a Monte Carlo Simulation sampling over the IDs in order to obtain a representative distribution of plausible outcomes. See the section below for more information.
+Importantly, note that there is an optional parameter in this component, `id` which defaults to a central run's ID for debugging purposes.  This parameter to the run with ID `id` in the data.  By nature of the projections, this component should be run using a Monte Carlo Simulation sampling over the IDs in order to obtain a representative distribution of plausible outcomes. See the section below for more information.
 
 ---
 
@@ -73,7 +73,7 @@ connect_param!(m, :PopulationAggregator, :input, :SPs, :population)
 
 run(m)
 
-# View the aggregated population variable, aggregated from 171 countries to 11 regions
+# View the aggregated population variable, aggregated from 184 countries to 11 regions
 getdataframe(m, :PopulationAggregator, :output)
 
 ```
@@ -86,4 +86,4 @@ getdataframe(m, :PopulationAggregator, :output)
 
 - [TODO citation]
 - [TODO describe source https://github.com/rffscghg/rff-socioeconomic-projections when public]
-- The _data/projections_ folder holds one file per projection, making 10,000 files in each of the subfolders _socioeconomic_ and _emissions_.
+- [TODO] describe the `calibration` folder and the data sources, both local and on Zotero, as well as the calibration steps
