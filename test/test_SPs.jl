@@ -15,10 +15,12 @@ run(m)
 
 m = Model()
 set_dimension!(m, :time, 2050:2300)
-set_dimension!(m, :country, all_countries.ISO3[1:10])
+# set_dimension!(m, :country, all_countries.ISO3[1:10]) # we enforce using all countries for now
+set_dimension!(m, :country, all_countries.ISO3)
 add_comp!(m, MimiRFFSPs.SPs, first = 2060, last = 2300)
-update_param!(m, :SPs, :country_names, all_countries.ISO3[1:10])
-
+# update_param!(m, :SPs, :country_names, all_countries.ISO3[1:10]) # we enforce using all countries for now
+update_param!(m, :SPs, :country_names, all_countries.ISO3)
+update_param!(m, :SPs, :start_year, 2060)
 run(m)
 
 # ERRORS
@@ -40,12 +42,11 @@ set_dimension!(m, :country, dummy_countries)
 add_comp!(m, MimiRFFSPs.SPs)
 update_param!(m, :SPs, :country_names, dummy_countries)
 
-error_msg = (try eval(run(m)) catch err err end).msg
-@test occursin("All countries in countries parameter must be found in SPs component Socioeconomic Dataframe, the following were not found:", error_msg)
+@test_throws KeyError run(m) # looks for the key "Sun" in the data and can't find it
 
 # VALIDATION
 
-id = Int(700)
+id = Int(700) # choose any random value between 1 and 10_000
 
 m = Model()
 set_dimension!(m, :time, 2020:2300)
@@ -106,7 +107,7 @@ end
 
 # check death rate
 
-pop_trajectory_key = (load(joinpath(@__DIR__, "..", "data", "keys", "sampled_pop_trajectory_numbers.csv")) |> DataFrame).x
+pop_trajectory_key = (load(joinpath(@__DIR__, "..", "data", "keys", "sampled_pop_trajectory_numbers.csv")) |> DataFrame).PopTrajectoryID
 deathrate_trajectory_id = convert(Int64, pop_trajectory_key[id])
         
 # Load Feather File

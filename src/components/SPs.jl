@@ -27,7 +27,7 @@ end
 
 function fill_emissions!(source, emissions_var, sample_id, start_year, end_year)
     for row in eachrow(source)
-        if row.year >= start_year && row.Year <= end_year && row.sample == sample_id
+        if row.year >= start_year && row.year <= end_year && row.sample == sample_id
             year_index = TimestepIndex(row.year - start_year + 1)
             # year_index = TimestepValue(row.year) # current bug in Mimi
             emissions_var[year_index] = row.value
@@ -108,7 +108,7 @@ end
         if !haskey(g_datasets, :n2o)
             g_datasets[:n2o] = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "N2O_Emissions_Trajectories.csv")) |> DataFrame
         end
-        if !haskey(g_datasets, :n2o)
+        if !haskey(g_datasets, :co2)
             g_datasets[:co2] = load(joinpath(@__DIR__, "..", "..", "data", "RFFSPs_large_datafiles", "emissions", "CO2_Emissions_Trajectories.csv")) |> DataFrame
         end
 
