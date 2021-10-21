@@ -137,15 +137,21 @@ for country in all_countries.ISO3
     @test deathrate_data_model.deathrate  ≈ deathrate_df_country.DeathRate  atol = 1e-9
 end
 
-# check ypc 1990
+# check pop 1990
 
-ypc1990 = load(joinpath(datadep"rffsps", "rff_ypc_1990.csv")) |> 
-    DataFrame |> 
-    i -> insertcols!(i, :sample => 1:10_000) |> 
-    i -> stack(i, Not(:sample)) |>
-    @filter(_.sample == id) |>
-    DataFrame |> 
-    @orderby(_.variable) |>
-    DataFrame
+# population1990 = load(joinpath(@__DIR__, "..", "data", "population1990.csv")) |> 
+#     DataFrame |>
+#     @orderby(_.ISO3) |>
+#     DataFrame
 
-@test m[:SPs, :ypc1990] ≈ ypc1990.value atol = 1e-9
+# @test m[:SPs, :population1990] ≈ population1990.value atol = 1e-9
+
+# # check gdp 1990
+
+# ypc1990 = load(joinpath(datadep"rffsps", "rff_ypc_1990.csv")) |> 
+#                 DataFrame |> 
+#                 i -> insertcols!(i, :sample => 1:10_000) |> 
+#                 i -> stack(i, Not(:sample)) |> 
+#                 DataFrame |> 
+#                 i -> rename!(i, [:sample, :country, :value]) |> 
+#                 DataFrame

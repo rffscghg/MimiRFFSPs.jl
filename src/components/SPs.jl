@@ -155,7 +155,7 @@ end
         end
 
         fill_population1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:pop1990]), v.population1990, country_lookup)
-        fill_gdp1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:ypc1990]), v.ypc1990, v.population1990, country_lookup, p.id)
+        fill_gdp1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:ypc1990]), v.gdp1990, v.population1990, country_lookup, p.id)
 
     end
 
