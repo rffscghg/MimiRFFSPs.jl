@@ -144,6 +144,8 @@ ypc1990 = load(joinpath(datadep"rffsps", "rff_ypc_1990.csv")) |>
     i -> insertcols!(i, :sample => 1:10_000) |> 
     i -> stack(i, Not(:sample)) |>
     @filter(_.sample == id) |>
+    DataFrame |> 
+    @orderby(_.variable) |>
     DataFrame
 
-@test m[:SPs, :ypc1990][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ ypc1990.value atol = 1e-9
+@test m[:SPs, :ypc1990] ≈ ypc1990.value atol = 1e-9

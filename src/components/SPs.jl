@@ -40,7 +40,7 @@ end
 function fill_ypc1990!(source, ypc1990, country_lookup, sample_id)
     for row in source
         if row.sample == sample_id
-            country_index = country_lookup[row.Country]
+            country_index = country_lookup[row.country]
             ypc1990[country_index] = row.value
         end
     end
@@ -133,7 +133,13 @@ end
         # YPC 1990 Values
 
         if !haskey(g_datasets, :ypc1990)
-            g_datasets[:ypc1990] = load(joinpath(datadep"rffsps", "rff_ypc_1990.csv")) |> DataFrame |> i -> insertcols!(i, :sample => 1:10_000) |> i -> stack(i, Not(:sample))
+            g_datasets[:ypc1990] = load(joinpath(datadep"rffsps", "rff_ypc_1990.csv")) |> 
+                DataFrame |> 
+                i -> insertcols!(i, :sample => 1:10_000) |> 
+                i -> stack(i, Not(:sample)) |> 
+                DataFrame |> 
+                i -> rename!(i, [:sample, :country, :value]) |> 
+                DataFrame
         end
         fill_ypc1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:ypc1990]), v.ypc1990, country_lookup, p.id)
 
