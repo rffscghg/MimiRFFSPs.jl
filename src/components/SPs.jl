@@ -41,7 +41,7 @@ function fill_ypc1990!(source, ypc1990, country_lookup, sample_id)
     for row in source
         if row.sample == sample_id
             country_index = country_lookup[row.country]
-            ypc1990[country_index] = row.value
+            ypc1990[country_index] = row.value .* pricelevel_2011_to_2005 # convert $2011 to $2005
         end
     end
 end
