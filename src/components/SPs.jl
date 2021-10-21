@@ -1,5 +1,7 @@
-using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArrays
+using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArrays, DataDeps
 import IteratorInterfaceExtensions, Tables
+
+const pricelevel_2011_to_2005 = 0.87
 
 function fill_socioeconomics!(source, population, gdp, country_lookup, start_year, end_year)
     for row in source
@@ -9,7 +11,7 @@ function fill_socioeconomics!(source, population, gdp, country_lookup, start_yea
             country_index = country_lookup[row.Country]
 
             population[year_index, country_index] = row.Pop ./ 1e3 # convert thousands to millions
-            gdp[year_index, country_index] = row.GDP ./ 1e3 .* 0.87 # convert millions to billions; convert $2011 to $2005
+            gdp[year_index, country_index] = row.GDP ./ 1e3 .* pricelevel_2011_to_2005 # convert millions to billions; convert $2011 to $2005
         end
     end
 end
@@ -35,6 +37,15 @@ function fill_emissions!(source, emissions_var, sample_id, start_year, end_year)
     end
 end
 
+function fill_ypc1990!(source, ypc1990, country_lookup, sample_id)
+    for row in source
+        if row.sample == sample_id
+            country_index = country_lookup[row.country]
+            ypc1990[country_index] = row.value .* pricelevel_2011_to_2005 # convert $2011 to $2005
+        end
+    end
+end
+
 @defcomp SPs begin
 
     country = Index()
@@ -47,7 +58,8 @@ end
     population  = Variable(index=[time, country], unit="million")
     deathrate   = Variable(index=[time, country], unit="deaths/1000 persons/yr")
     gdp         = Variable(index=[time, country], unit="billion US\$2005/yr")
-    
+    ypc1990     = Variable(index=[country], unit = unit="US\$2005/yr/person")
+
     co2_emissions   = Variable(index=[time], unit="GtC/yr")
     ch4_emissions   = Variable(index=[time], unit="MtCH4/yr")
     n2o_emissions   = Variable(index=[time], unit="MtN/yr")
@@ -116,6 +128,20 @@ end
         fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:ch4]), v.ch4_emissions, p.id, p.start_year, p.end_year)
         fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:co2]), v.co2_emissions, p.id, p.start_year, p.end_year)
         fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:n2o]), v.n2o_emissions, p.id, p.start_year, p.end_year)
+
+        # ----------------------------------------------------------------------
+        # YPC 1990 Values
+
+        if !haskey(g_datasets, :ypc1990)
+            g_datasets[:ypc1990] = load(joinpath(datadep"rffsps", "rff_ypc_1990.csv")) |> 
+                DataFrame |> 
+                i -> insertcols!(i, :sample => 1:10_000) |> 
+                i -> stack(i, Not(:sample)) |> 
+                DataFrame |> 
+                i -> rename!(i, [:sample, :country, :value]) |> 
+                DataFrame
+        end
+        fill_ypc1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:ypc1990]), v.ypc1990, country_lookup, p.id)
 
     end
 
