@@ -101,8 +101,8 @@ for country in all_countries.ISO3
         @orderby(:Year) |>
         DataFrame
 
-    @test pop_data_model.population  ≈ socio_df_country.Pop  atol = 1e-9
-    @test gdp_data_model.gdp  ≈ socio_df_country.GDP  atol = 1e-9
+    @test pop_data_model.population  ≈ socio_df_country.Pop ./ 1e3  atol = 1e-9
+    @test gdp_data_model.gdp  ≈ socio_df_country.GDP ./ 1e3 .* MimiRFFSPs.pricelevel_2011_to_2005 atol = 1e-9
 end
 
 # check death rate
@@ -137,15 +137,29 @@ for country in all_countries.ISO3
     @test deathrate_data_model.deathrate  ≈ deathrate_df_country.DeathRate  atol = 1e-9
 end
 
-# check ypc 1990
+# check pop 1990
 
-ypc1990 = load(joinpath(datadep"rffsps", "rff_ypc_1990.csv")) |> 
-    DataFrame |> 
-    i -> insertcols!(i, :sample => 1:10_000) |> 
-    i -> stack(i, Not(:sample)) |>
-    @filter(_.sample == id) |>
-    DataFrame |> 
-    @orderby(_.variable) |>
+population1990 = load(joinpath(@__DIR__, "..", "data", "population1990.csv")) |> 
+    DataFrame |>
+    @orderby(_.ISO3) |>
     DataFrame
 
-@test m[:SPs, :ypc1990] ≈ ypc1990.value atol = 1e-9
+@test m[:SPs, :population1990] ≈ population1990.Population atol = 1e-9
+
+# # check gdp 1990
+
+ypc1990 = load(joinpath(datadep"rffsps", "rff_ypc_1990.csv")) |> 
+                DataFrame |> 
+                i -> insertcols!(i, :sample => 1:10_000) |> 
+                i -> stack(i, Not(:sample)) |> 
+                DataFrame |> 
+                @filter(_.sample == id) |>
+                DataFrame |>
+                @orderby(_.variable) |>
+                DataFrame
+                
+gdp1990_model = getdataframe(m, :SPs, :gdp1990) # billions
+pop1990_model = getdataframe(m, :SPs, :population1990) # millions
+ypc1990_model = gdp1990_model.gdp1990  ./ pop1990_model.population1990 .* 1e3 # per capita
+
+@test ypc1990_model ≈ ypc1990.value .* MimiRFFSPs.pricelevel_2011_to_2005 atol = 1e-9
