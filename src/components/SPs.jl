@@ -37,11 +37,18 @@ function fill_emissions!(source, emissions_var, sample_id, start_year, end_year)
     end
 end
 
-function fill_ypc1990!(source, ypc1990, country_lookup, sample_id)
+function fill_population1990!(source, population1990, country_lookup)
+    for row in source
+        country_index = country_lookup[row.ISO3]
+        population1990[country_index] = row.Population # millions
+    end
+end
+
+function fill_gdp1990!(source, gdp1990, population1990, country_lookup, sample_id)
     for row in source
         if row.sample == sample_id
             country_index = country_lookup[row.country]
-            ypc1990[country_index] = row.value .* pricelevel_2011_to_2005 # convert $2011 to $2005
+            gdp1990[country_index] = (row.value * population1990[country_index]) .* pricelevel_2011_to_2005 ./ 1e3 # convert $2011 to $2005 and divide by 1e3 to get millions -> billions
         end
     end
 end
@@ -50,16 +57,18 @@ end
 
     country = Index()
 
-    start_year = Parameter{Int}(default=Int(2020)) # year (annual) data shuold start
-    end_year = Parameter{Int}(default=Int(2300)) # year (annual) data shuold end
+    start_year = Parameter{Int}(default=Int(2020)) # year (annual) data should start
+    end_year = Parameter{Int}(default=Int(2300)) # year (annual) data should end
     country_names = Parameter{String}(index=[country]) # need the names of the countries from the dimension
     id = Parameter{Int64}(default=Int(1086)) # the sample (out of 10,000) to be used
-
+    
     population  = Variable(index=[time, country], unit="million")
     deathrate   = Variable(index=[time, country], unit="deaths/1000 persons/yr")
     gdp         = Variable(index=[time, country], unit="billion US\$2005/yr")
-    ypc1990     = Variable(index=[country], unit = unit="US\$2005/yr/person")
-
+    
+    population1990  = Variable(index=[country], unit = "million")
+    gdp1990         = Variable(index=[country], unit = unit="billion US\$2005/yr")
+    
     co2_emissions   = Variable(index=[time], unit="GtC/yr")
     ch4_emissions   = Variable(index=[time], unit="MtCH4/yr")
     n2o_emissions   = Variable(index=[time], unit="MtN/yr")
@@ -130,7 +139,7 @@ end
         fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:n2o]), v.n2o_emissions, p.id, p.start_year, p.end_year)
 
         # ----------------------------------------------------------------------
-        # YPC 1990 Values
+        # Population and GDP 1990 Values
 
         if !haskey(g_datasets, :ypc1990)
             g_datasets[:ypc1990] = load(joinpath(datadep"rffsps", "rff_ypc_1990.csv")) |> 
@@ -141,7 +150,12 @@ end
                 i -> rename!(i, [:sample, :country, :value]) |> 
                 DataFrame
         end
-        fill_ypc1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:ypc1990]), v.ypc1990, country_lookup, p.id)
+        if !haskey(g_datasets, :pop1990)
+            g_datasets[:pop1990] = load(joinpath(@__DIR__, "..", "..", "data/population1990.csv")) |> DataFrame
+        end
+
+        fill_population1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:pop1990]), v.population1990, country_lookup)
+        fill_gdp1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:ypc1990]), v.ypc1990, v.population1990, country_lookup, p.id)
 
     end
 
