@@ -87,7 +87,7 @@ end
        
         # Load Feather File
         t = Arrow.Table(joinpath(datadep"rffsps", "rffsps", "run_$(p.id).feather"))
-        fill_socioeconomics!(t.Year, t.Country, t.Pop, t.GDP, population, v.gdp, country_lookup, p.start_year, p.end_year)
+        fill_socioeconomics!(t.Year, t.Country, t.Pop, t.GDP, v.population, v.gdp, country_lookup, p.start_year, p.end_year)
 
         for year in p.start_year:5:p.end_year-5, country in country_indices
             year_as_timestep = TimestepIndex(year - p.start_year + 1)
