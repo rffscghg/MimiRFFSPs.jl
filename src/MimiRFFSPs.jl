@@ -14,9 +14,6 @@ function __init__()
         "https://rffsps.s3.us-west-1.amazonaws.com/RFFSPs_large_datafiles.7z",
         post_fetch_method=unpack
     ))
-
-    # Now trigger a download
-    datadep"rffsps"
 end
 
 end # module
