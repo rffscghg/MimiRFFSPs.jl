@@ -4,7 +4,7 @@ import IteratorInterfaceExtensions, Tables
 const pricelevel_2011_to_2005 = 0.87
 
 function fill_socioeconomics!(source_Year, source_Country, source_Pop, source_GDP, population, gdp, country_lookup, start_year, end_year)
-    for row in source
+    for i in 1:length(source_Year)
         if source_Year[i] >= start_year && source_Year[i] <= end_year
             year_index = TimestepIndex(source_Year[i] - start_year + 1)
             # year_index = TimestepValue(source_Year[i]) # current bug in Mimi
