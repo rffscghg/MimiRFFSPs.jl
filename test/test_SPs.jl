@@ -59,11 +59,11 @@ run(m)
 
 # check emissions
 
-ch4 = load(joinpath(datadep"rffsps_v2", "emissions", "rffsp_ch4_emissions.csv")) |> 
+ch4 = load(joinpath(datadep"rffsps_v3", "emissions", "rffsp_ch4_emissions.csv")) |> 
     DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
-n2o = load(joinpath(datadep"rffsps_v2", "emissions", "rffsp_n2o_emissions.csv")) |> 
+n2o = load(joinpath(datadep"rffsps_v3", "emissions", "rffsp_n2o_emissions.csv")) |> 
     DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
-co2 = load(joinpath(datadep"rffsps_v2", "emissions", "rffsp_co2_emissions.csv")) |> 
+co2 = load(joinpath(datadep"rffsps_v3", "emissions", "rffsp_co2_emissions.csv")) |> 
     DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
 
 @test m[:SPs, :co2_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ co2.value atol = 1e-9
@@ -72,7 +72,7 @@ co2 = load(joinpath(datadep"rffsps_v2", "emissions", "rffsp_co2_emissions.csv"))
 
 # check socioeconomics
 
-t = Arrow.Table(joinpath(datadep"rffsps_v2", "pop_income", "rffsp_pop_income_run_$id.feather"))
+t = Arrow.Table(joinpath(datadep"rffsps_v3", "pop_income", "rffsp_pop_income_run_$id.feather"))
 socio_df = DataFrame(   :Year => copy(t.Year), 
                         :Country => copy(t.Country), 
                         :Pop => copy(t.Pop), 
@@ -112,7 +112,7 @@ deathrate_trajectory_id = convert(Int64, pop_trajectory_key[id])
         
 # Load Feather File
 original_years = collect(2023:5:2300)
-t = Arrow.Table(joinpath(datadep"rffsps_v2", "death_rates", "rffsp_death_rates_run_$(deathrate_trajectory_id).feather"))
+t = Arrow.Table(joinpath(datadep"rffsps_v3", "death_rates", "rffsp_death_rates_run_$(deathrate_trajectory_id).feather"))
 deathrate_df = DataFrame(:Year => copy(t.Year), 
                         :Country => copy(t.ISO3), 
                         :DeathRate => copy(t.DeathRate)
@@ -148,7 +148,7 @@ population1990 = load(joinpath(@__DIR__, "..", "data", "population1990.csv")) |>
 
 # # check gdp 1990
 
-ypc1990 = load(joinpath(datadep"rffsps_v2", "ypc1990", "rffsp_ypc1990.csv")) |> 
+ypc1990 = load(joinpath(datadep"rffsps_v3", "ypc1990", "rffsp_ypc1990.csv")) |> 
                 DataFrame |> 
                 i -> insertcols!(i, :sample => 1:10_000) |> 
                 i -> stack(i, Not(:sample)) |> 
