@@ -16,13 +16,13 @@ function fill_socioeconomics!(source, population, gdp, country_lookup, start_yea
     end
 end
 
-function fill_deathrates!(source, deathrate, country_lookup, start_year, end_year)
-    for row in source
-        if row.Year >= start_year && row.Year <= end_year
-            year_index = TimestepIndex(row.Year - start_year + 1)
-            # year_index = TimestepValue(row.Year) # current bug in Mimi
-            country_index = country_lookup[row.ISO3]
-            deathrate[year_index, country_index] = row.DeathRate
+function fill_deathrates!(source_Year, source_ISO3, source_DeathRate, deathrate, country_lookup, start_year, end_year)
+    for i in 1:length(source_Year)
+        if source_Year[i] >= start_year && source_Year[i] <= end_year
+            year_index = TimestepIndex(source_Year[i] - start_year + 1)
+            # year_index = TimestepValue(source_Year[i]) # current bug in Mimi
+            country_index = country_lookup[source_ISO3[i]]
+            deathrate[year_index, country_index] = source_DeathRate[i]
         end
     end
 end
@@ -113,7 +113,7 @@ end
         
         # Load Feather File
         t = Arrow.Table(joinpath(datadep"rffsps", "death_rates", "death_rates_Trajectory$(deathrate_trajectory_id).feather"))
-        fill_deathrates!(Tables.datavaluerows(t), v.deathrate, country_lookup, p.start_year, p.end_year)
+        fill_deathrates!(t.Year, t.ISO3, t.DeathRate, v.deathrate, country_lookup, p.start_year, p.end_year)
         # TODO could handle the repeating of years here instead of loading bigger files
 
         # ----------------------------------------------------------------------
