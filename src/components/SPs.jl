@@ -3,26 +3,26 @@ import IteratorInterfaceExtensions, Tables
 
 const pricelevel_2011_to_2005 = 0.87
 
-function fill_socioeconomics!(source, population, gdp, country_lookup, start_year, end_year)
-    for row in source
-        if row.Year >= start_year && row.Year <= end_year
-            year_index = TimestepIndex(row.Year - start_year + 1)
-            # year_index = TimestepValue(row.Year) # current bug in Mimi
-            country_index = country_lookup[row.Country]
+function fill_socioeconomics!(source_Year, source_Country, source_Pop, source_GDP, population, gdp, country_lookup, start_year, end_year)
+    for i in 1:length(source_Year)
+        if source_Year[i] >= start_year && source_Year[i] <= end_year
+            year_index = TimestepIndex(source_Year[i] - start_year + 1)
+            # year_index = TimestepValue(source_Year[i]) # current bug in Mimi
+            country_index = country_lookup[source_Country[i]]
 
-            population[year_index, country_index] = row.Pop ./ 1e3 # convert thousands to millions
-            gdp[year_index, country_index] = row.GDP ./ 1e3 .* pricelevel_2011_to_2005 # convert millions to billions; convert $2011 to $2005
+            population[year_index, country_index] = source_Pop[i] ./ 1e3 # convert thousands to millions
+            gdp[year_index, country_index] = source_GDP[i] ./ 1e3 .* pricelevel_2011_to_2005 # convert millions to billions; convert $2011 to $2005
         end
     end
 end
 
-function fill_deathrates!(source, deathrate, country_lookup, start_year, end_year)
-    for row in source
-        if row.Year >= start_year && row.Year <= end_year
-            year_index = TimestepIndex(row.Year - start_year + 1)
-            # year_index = TimestepValue(row.Year) # current bug in Mimi
-            country_index = country_lookup[row.ISO3]
-            deathrate[year_index, country_index] = row.DeathRate
+function fill_deathrates!(source_Year, source_ISO3, source_DeathRate, deathrate, country_lookup, start_year, end_year)
+    for i in 1:length(source_Year)
+        if source_Year[i] >= start_year && source_Year[i] <= end_year
+            year_index = TimestepIndex(source_Year[i] - start_year + 1)
+            # year_index = TimestepValue(source_Year[i]) # current bug in Mimi
+            country_index = country_lookup[source_ISO3[i]]
+            deathrate[year_index, country_index] = source_DeathRate[i]
         end
     end
 end
@@ -87,7 +87,7 @@ end
        
         # Load Feather File
         t = Arrow.Table(joinpath(datadep"rffsps", "rffsps", "run_$(p.id).feather"))
-        fill_socioeconomics!(Tables.datavaluerows(t), v.population, v.gdp, country_lookup, p.start_year, p.end_year)
+        fill_socioeconomics!(t.Year, t.Country, t.Pop, t.GDP, v.population, v.gdp, country_lookup, p.start_year, p.end_year)
 
         for year in p.start_year:5:p.end_year-5, country in country_indices
             year_as_timestep = TimestepIndex(year - p.start_year + 1)
@@ -113,7 +113,7 @@ end
         
         # Load Feather File
         t = Arrow.Table(joinpath(datadep"rffsps", "death_rates", "death_rates_Trajectory$(deathrate_trajectory_id).feather"))
-        fill_deathrates!(Tables.datavaluerows(t), v.deathrate, country_lookup, p.start_year, p.end_year)
+        fill_deathrates!(t.Year, t.ISO3, t.DeathRate, v.deathrate, country_lookup, p.start_year, p.end_year)
         # TODO could handle the repeating of years here instead of loading bigger files
 
         # ----------------------------------------------------------------------
