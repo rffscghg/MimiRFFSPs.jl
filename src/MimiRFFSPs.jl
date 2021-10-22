@@ -9,9 +9,9 @@ include("components/RegionAggregatorSum.jl")
 
 function __init__()
     register(DataDep(
-        "rffsps",
-        "RFF SPs prerelease version.",
-        "https://rffsps.s3.us-west-1.amazonaws.com/RFFSPs_large_datafiles.7z",
+        "rffsps_v2",
+        "RFF SPs prerelease version v2.",
+        "https://rffsps.s3.us-west-1.amazonaws.com/rffsps_v2.7z",
         post_fetch_method=unpack
     ))
 end
