@@ -1,7 +1,8 @@
 using Mimi, CSVFiles, DataFrames, Query, Interpolations, Arrow, CategoricalArrays, DataDeps
 import IteratorInterfaceExtensions, Tables
 
-const pricelevel_2011_to_2005 = 0.87
+# (10/25/2021) BEA Table 1.1.9, line 1 GDP annual values as linked here: https://apps.bea.gov/iTable/iTable.cfm?reqid=19&step=3&isuri=1&select_all_years=0&nipa_table_list=13&series=a&first_year=2005&last_year=2020&scale=-99&categories=survey&thetable=
+const pricelevel_2011_to_2005 = 87.504/98.164
 
 function fill_socioeconomics!(source_Year, source_Country, source_Pop, source_GDP, population, gdp, country_lookup, start_year, end_year)
     for i in 1:length(source_Year)
