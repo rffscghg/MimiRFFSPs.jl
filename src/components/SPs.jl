@@ -92,8 +92,8 @@ end
 
         for year in p.start_year:5:p.end_year-5, country in country_indices
             year_as_timestep = TimestepIndex(year - p.start_year + 1)
-            pop_interpolator = LinearInterpolation(Float64[year, year+5], [v.log(population[year_as_timestep,country]), v.log(population[year_as_timestep+5,country])])
-            gdp_interpolator = LinearInterpolation(Float64[year, year+5], [v.log(gdp[year_as_timestep,country]), v.log(gdp[year_as_timestep+5,country])])
+            pop_interpolator = LinearInterpolation(Float64[year, year+5], [log(v.population[year_as_timestep,country]), log(v.population[year_as_timestep+5,country])])
+            gdp_interpolator = LinearInterpolation(Float64[year, year+5], [log(v.gdp[year_as_timestep,country]), log(v.gdp[year_as_timestep+5,country])])
             for year2 in year+1:year+4
                 year2_as_timestep = TimestepIndex(year2 - p.start_year + 1)
                 v.population[year2_as_timestep,country] = exp(pop_interpolator[year2])
