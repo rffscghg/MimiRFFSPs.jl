@@ -4,7 +4,7 @@ import IteratorInterfaceExtensions, Tables
 # (10/25/2021) BEA Table 1.1.9, line 1 GDP annual values as linked here: https://apps.bea.gov/iTable/iTable.cfm?reqid=19&step=3&isuri=1&select_all_years=0&nipa_table_list=13&series=a&first_year=2005&last_year=2020&scale=-99&categories=survey&thetable=
 const pricelevel_2011_to_2005 = 87.504/98.164
 
-function fill_socioeconomics!(source_Year, source_Country, source_Pop, source_GDP, population, gdp, country_lookup, start_year, end_year)
+function fill_socioeconomics!(source_Year, source_Country, source_Pop, source_GDP, population, gdp, population_global, gdp_global, country_lookup, start_year, end_year)
     for i in 1:length(source_Year)
         if source_Year[i] >= start_year && source_Year[i] <= end_year
             year_index = TimestepIndex(source_Year[i] - start_year + 1)
@@ -13,6 +13,10 @@ function fill_socioeconomics!(source_Year, source_Country, source_Pop, source_GD
 
             population[year_index, country_index] = source_Pop[i] ./ 1e3 # convert thousands to millions
             gdp[year_index, country_index] = source_GDP[i] ./ 1e3 .* pricelevel_2011_to_2005 # convert millions to billions; convert $2011 to $2005
+
+            # add global aggregates to include in compute_scc(...,save_list)
+            population_global[year_index] = sum(population[year_index,:])
+            gdp_global[year_index] = sum(gdp[year_index,:])
         end
     end
 end
@@ -64,8 +68,10 @@ end
     id = Parameter{Int64}(default=Int(1086)) # the sample (out of 10,000) to be used
     
     population  = Variable(index=[time, country], unit="million")
+    population_global  = Variable(index=[time], unit="million")
     deathrate   = Variable(index=[time, country], unit="deaths/1000 persons/yr")
     gdp         = Variable(index=[time, country], unit="billion US\$2005/yr")
+    gdp_global         = Variable(index=[time], unit="billion US\$2005/yr")
     
     population1990  = Variable(index=[country], unit = "million")
     gdp1990         = Variable(index=[country], unit = unit="billion US\$2005/yr")
@@ -88,16 +94,19 @@ end
        
         # Load Feather File
         t = Arrow.Table(joinpath(datadep"rffsps_v3", "pop_income", "rffsp_pop_income_run_$(p.id).feather"))
-        fill_socioeconomics!(t.Year, t.Country, t.Pop, t.GDP, v.population, v.gdp, country_lookup, p.start_year, p.end_year)
+        fill_socioeconomics!(t.Year, t.Country, t.Pop, t.GDP, v.population, v.gdp, v.population_global, v.gdp_global, country_lookup, p.start_year, p.end_year)
 
         for year in p.start_year:5:p.end_year-5, country in country_indices
             year_as_timestep = TimestepIndex(year - p.start_year + 1)
-            pop_interpolator = LinearInterpolation(Float64[year, year+5], [v.log(population[year_as_timestep,country]), v.log(population[year_as_timestep+5,country])])
-            gdp_interpolator = LinearInterpolation(Float64[year, year+5], [v.log(gdp[year_as_timestep,country]), v.log(gdp[year_as_timestep+5,country])])
+            pop_interpolator = LinearInterpolation(Float64[year, year+5], [log(v.population[year_as_timestep,country]), log(v.population[year_as_timestep+5,country])])
+            gdp_interpolator = LinearInterpolation(Float64[year, year+5], [log(v.gdp[year_as_timestep,country]), log(v.gdp[year_as_timestep+5,country])])
             for year2 in year+1:year+4
                 year2_as_timestep = TimestepIndex(year2 - p.start_year + 1)
                 v.population[year2_as_timestep,country] = exp(pop_interpolator[year2])
                 v.gdp[year2_as_timestep,country] = exp(gdp_interpolator[year2])
+                ## add global
+                v.population_global[year2_as_timestep] = sum(v.population[year2_as_timestep,:])
+                v.gdp_global[year2_as_timestep] = sum(v.gdp[year2_as_timestep,:])
             end
         end        
 
