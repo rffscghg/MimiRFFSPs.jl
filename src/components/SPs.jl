@@ -105,8 +105,8 @@ end
         end
         
         # add global data for future accessibility and quality control
-        v.gdp_global = sum(v.gdp, dims = 2) # sum across countries, which are the second dimension
-        v.population_global = sum(v.population, dims = 2) # sum across countries, which are the second dimension
+        v.gdp_global[:,:] = sum(v.gdp[:,:], dims = 2) # sum across countries, which are the second dimension
+        v.population_global[:,:] = sum(v.population[:,:], dims = 2) # sum across countries, which are the second dimension
 
         # ----------------------------------------------------------------------
         # Death Rate Data
