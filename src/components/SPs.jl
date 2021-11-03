@@ -13,6 +13,7 @@ function fill_socioeconomics!(source_Year, source_Country, source_Pop, source_GD
 
             population[year_index, country_index] = source_Pop[i] ./ 1e3 # convert thousands to millions
             gdp[year_index, country_index] = source_GDP[i] ./ 1e3 .* pricelevel_2011_to_2005 # convert millions to billions; convert $2011 to $2005
+
         end
     end
 end
@@ -64,8 +65,10 @@ end
     id = Parameter{Int64}(default=Int(1086)) # the sample (out of 10,000) to be used
     
     population  = Variable(index=[time, country], unit="million")
+    population_global  = Variable(index=[time], unit="million")
     deathrate   = Variable(index=[time, country], unit="deaths/1000 persons/yr")
     gdp         = Variable(index=[time, country], unit="billion US\$2005/yr")
+    gdp_global         = Variable(index=[time], unit="billion US\$2005/yr")
     
     population1990  = Variable(index=[country], unit = "million")
     gdp1990         = Variable(index=[country], unit = unit="billion US\$2005/yr")
@@ -99,7 +102,11 @@ end
                 v.population[year2_as_timestep,country] = exp(pop_interpolator[year2])
                 v.gdp[year2_as_timestep,country] = exp(gdp_interpolator[year2])
             end
-        end        
+        end
+        
+        # add global data for future accessibility and quality control
+        v.gdp_global[:,:] = sum(v.gdp[:,:], dims = 2) # sum across countries, which are the second dimension
+        v.population_global[:,:] = sum(v.population[:,:], dims = 2) # sum across countries, which are the second dimension
 
         # ----------------------------------------------------------------------
         # Death Rate Data

@@ -2,6 +2,7 @@ using Mimi, MimiRFFSPs, DataFrames, CSVFiles, Query, Test, Arrow, DataDeps
 import MimiRFFSPs: SPs
 
 all_countries = load(joinpath(@__DIR__, "..", "data", "keys", "MimiRFFSPs_ISO3.csv")) |> DataFrame
+tolerance = 1e-9
 
 # BASIC API
 
@@ -66,9 +67,9 @@ n2o = load(joinpath(datadep"rffsps_v3", "emissions", "rffsp_n2o_emissions.csv"))
 co2 = load(joinpath(datadep"rffsps_v3", "emissions", "rffsp_co2_emissions.csv")) |> 
     DataFrame |> @filter(_.year in collect(2020:2300)) |> @filter(_.sample == id) |> DataFrame
 
-@test m[:SPs, :co2_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ co2.value atol = 1e-9
-@test m[:SPs, :ch4_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ ch4.value atol = 1e-9
-@test m[:SPs, :n2o_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ n2o.value atol = 1e-9
+@test m[:SPs, :co2_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ co2.value atol = tolerance
+@test m[:SPs, :ch4_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ ch4.value atol = tolerance
+@test m[:SPs, :n2o_emissions][findfirst(i -> i == 2020, collect(2020:2300)):end] ≈ n2o.value atol = tolerance
 
 # check socioeconomics
 
@@ -101,9 +102,17 @@ for country in all_countries.ISO3
         @orderby(:Year) |>
         DataFrame
 
-    @test pop_data_model.population  ≈ socio_df_country.Pop ./ 1e3  atol = 1e-9
-    @test gdp_data_model.gdp  ≈ socio_df_country.GDP ./ 1e3 .* MimiRFFSPs.pricelevel_2011_to_2005 atol = 1e-9
+    @test pop_data_model.population  ≈ socio_df_country.Pop ./ 1e3  atol = tolerance
+    @test gdp_data_model.gdp  ≈ socio_df_country.GDP ./ 1e3 .* MimiRFFSPs.pricelevel_2011_to_2005 atol = tolerance
 end
+
+socio_gdf = groupby(socio_df, :Year)
+
+model_population_global = getdataframe(m, :SPs, :population_global) |> @filter(_.time in collect(2020:5:2300)) |> @orderby(:time) |> DataFrame
+model_gdp_global = getdataframe(m, :SPs, :gdp_global) |> @filter(_.time in collect(2020:5:2300)) |> @orderby(:time)|> DataFrame
+
+@test model_population_global.population_global ≈ (combine(socio_gdf, :Pop => sum).Pop_sum ./ 1e3)  atol = tolerance
+@test model_gdp_global.gdp_global ≈ (combine(socio_gdf, :GDP => sum).GDP_sum ./ 1e3 .* MimiRFFSPs.pricelevel_2011_to_2005)  atol = 1e-7 # slightly higher tolerance
 
 # check death rate
 
@@ -134,7 +143,7 @@ for country in all_countries.ISO3
         @orderby(:Year) |>
         DataFrame
 
-    @test deathrate_data_model.deathrate  ≈ deathrate_df_country.DeathRate  atol = 1e-9
+    @test deathrate_data_model.deathrate  ≈ deathrate_df_country.DeathRate  atol = tolerance
 end
 
 # check pop 1990
@@ -144,7 +153,7 @@ population1990 = load(joinpath(@__DIR__, "..", "data", "population1990.csv")) |>
     @orderby(_.ISO3) |>
     DataFrame
 
-@test m[:SPs, :population1990] ≈ population1990.Population atol = 1e-9
+@test m[:SPs, :population1990] ≈ population1990.Population atol = tolerance
 
 # # check gdp 1990
 
@@ -162,4 +171,4 @@ gdp1990_model = getdataframe(m, :SPs, :gdp1990) # billions
 pop1990_model = getdataframe(m, :SPs, :population1990) # millions
 ypc1990_model = gdp1990_model.gdp1990  ./ pop1990_model.population1990 .* 1e3 # per capita
 
-@test ypc1990_model ≈ ypc1990.value .* MimiRFFSPs.pricelevel_2011_to_2005 atol = 1e-9
+@test ypc1990_model ≈ ypc1990.value .* MimiRFFSPs.pricelevel_2011_to_2005 atol = tolerance
