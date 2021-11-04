@@ -62,7 +62,7 @@ end
     start_year = Parameter{Int}(default=Int(2020)) # year (annual) data should start
     end_year = Parameter{Int}(default=Int(2300)) # year (annual) data should end
     country_names = Parameter{String}(index=[country]) # need the names of the countries from the dimension
-    id = Parameter{Int64}(default=Int(1086)) # the sample (out of 10,000) to be used
+    id = Parameter{Int64}(default=Int(6546)) # the sample (out of 10,000) to be used
     
     population  = Variable(index=[time, country], unit="million")
     population_global  = Variable(index=[time], unit="million")
