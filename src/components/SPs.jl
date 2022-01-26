@@ -75,7 +75,7 @@ end
     
     co2_emissions   = Variable(index=[time], unit="GtC/yr")
     ch4_emissions   = Variable(index=[time], unit="MtCH4/yr")
-    n2o_emissions   = Variable(index=[time], unit="MtN/yr")
+    n2o_emissions   = Variable(index=[time], unit="MtN2/yr")
 
     function init(p,v,d)
 
@@ -127,7 +127,7 @@ end
         # ----------------------------------------------------------------------
         # Emissions Data
         #   carbon dioxide emissions in GtC
-        #   nitrous oxide emissions in MtN
+        #   nitrous oxide emissions in MtN2
         #   methane emissions in MtCH4
         
         # add data to the global dataset if it's not there
