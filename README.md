@@ -31,7 +31,7 @@ set_dimension!(m, :time, 1750:2300)
 
 add_comp!(m, MimiRFFSPs.SPs, first = 2020, last = 2300)
 
-# Set country dimension and related parameter: As of now this must be exactly the 184 countries in the following file, but we will add flexibility for this in the #future.
+# Set country dimension and related parameter: As of now this must be exactly the 184 countries in the following file, but we will add flexibility for this in the future.
 all_countries = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_ISO3.csv")) |> DataFrame
 set_dimension!(m, :country, all_countries.ISO3)
 update_param!(m, :SPs, :country_names, all_countries.ISO3) # should match the dimension
@@ -45,20 +45,20 @@ explore(m)
 # Access a specific variable
 emissions = m[:SPs, :gdp]
 ```
-Importantly, note that there is an optional parameter in this component, `id` which defaults to a central run's ID for debugging purposes.  This parameter to the run with ID `id` in the data.  By nature of the projections, this component should be run using a Monte Carlo Simulation sampling over the IDs in order to obtain a representative distribution of plausible outcomes. See the section below for more information.
+The `id` parameter in this component (default id of 6546) which allows one to run the model with a specified parameter set of ID `id` within the data.  By nature of these projections, this component should be run using a Monte Carlo Simulation sampling over the IDs in order to obtain a representative distribution of plausible outcomes, but providing an ID may be useful for debugging purposes. See the section below for more information.
 
 Also note that the `SPs` component has optional arguments `start_year` (default = 2020) and `end_year` (default = 2300) that can be altered to values within the 2020 - 2300 timeframe.  Timesteps must be annual as of now, but we will add flexibility to this in the future.
 
 ---
 
-Now say you want to connect the `m[:SPs, :population]` output variable to another Mimi component that requires population at a regional level.  This is where the `RegionAggregatorSum` component can be helpful, which, as the name indicates, aggregates countries to regions with a provided mapping via the `sum` function (other functions can be added as desired, this is a relatively new and nimble component). You will need to provide a mapping between the input regions (countries here) and output regions (regions here) in a Vector of the length of the input regions and each element being one of the output regions.
+If a user wants to connect the `m[:SPs, :population]` output variable to another Mimi component that requires population at a more aggregated regional level, the `RegionAggregatorSum` component can be helpful. This helper component aggregates countries to regions with a provided mapping via the `sum` function (other functions can be added as desired, this is a relatively new and nimble component). You will need to provide a mapping between the input regions (countries here) and output regions (regions here) in a Vector of the length of the input regions and each element being one of the output regions. Note that this component is not yet optimized for performance.
 
 ```julia
 # Start with the model `m` from above and add the component with the name `:PopulationAggregator`
 add_comp!(m, MimiRFFSPs.RegionAggregatorSum, :PopulationAggregator, first = 2020, last = 2300)
 
 # Bring in a dummy mapping between the countries list from the model above and our current one. Note that this DataFrame has two columns, `InputRegion` and `OutputRegion`, where `InputRegion` is identical to `all_countries.ISO3` above but we will reset here for clarity.
-mapping = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_dummyInputOutput.csv")) |> DataFrame
+mapping = load(joinpath(@__DIR__, "test", "data", "MimiRFFSPs_dummyInputOutput.csv")) |> DataFrame
 inputregions = mapping.Input_Region
 outputregions = sort(unique(mapping.Output_Region))
 
@@ -81,12 +81,24 @@ getdataframe(m, :PopulationAggregator, :output)
 
 ```
 
-## A Note on Sampling and Monte Carlo Simulations
+## Data Sources
 
-[TODO] 
+Most data inputs to this model and components are hosted on `Zenodo.com` and retrieved upon  along with a snapshot of the `rff-socioeconomic-projections` private Github repository at the time when these data were produced. These files will be downloaded automatically to your machine upon running this package, as indicated by the following `__init__()` function specification from `MimiRFFSPs.jl`.
 
-## Data and Calibration
+```
+function __init__()
+    register(DataDep(
+        "rffsps_v3",
+        "RFF SPs prerelease version v3.",
+        "https://rffsps.s3.us-west-1.amazonaws.com/rffsps_v3.7z",
+        post_fetch_method=unpack
+    ))
+end
+```
 
-- [TODO citation]
-- [TODO describe source https://github.com/rffscghg/rff-socioeconomic-projections when public]
-- [TODO] describe the `calibration` folder and the data sources, both local and on Zotero, as well as the calibration steps
+Details on any files hosted within this repository in the `data` folder can be found in Data_README.md within that folder.
+
+## Citations
+
+Rennert, K. et al. The Social Cost of Carbon: Advances in Long-Term Probabilistic Projections of Population, GDP, Emissions, and Discount Rates. Brook. Pap. Econ. Act. (Forthcoming).
+
