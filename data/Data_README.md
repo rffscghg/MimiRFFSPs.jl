@@ -12,10 +12,6 @@ In order to run some damage functions we need the baseline population from 1990.
 
 The keys folder holds the following files.
 
-_sampled_pop_trajectory_numbers.csv_
-
-This file links each of the 10,000 RFF SP trials to the matching Raftery et al. population runs and was transferred from Jordan Wingenroth (Resources for the Future) to Lisa Rennels (UC Berkeley) on 11/12/2021.
-
 _ISO3166-1_codes_and_country_names.xlsx_ (and the matching .csv file) & _NumericCodes_to_ISO3.csv_
 
 These file hold the crosswalks of ISO3 country codes, names, and numbers used as a reference for this work, and were downloaded by Tammy Tan and Lisa Rennels from http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3 on 08/12/2021.
