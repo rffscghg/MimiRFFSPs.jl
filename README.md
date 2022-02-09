@@ -90,7 +90,7 @@ function __init__()
     register(DataDep(
         "rffsps_v5",
         "RFF SPs version v5",
-        "https://rffsps.s3.us-west-1.amazonaws.com/rffsps_v5.7z",
+        "https://zenodo.org/record/6016583/files/rffsps_v5.7z",
         "a39b51d7552d198123b1863ea5a131533715a7a7c9ff6fad4b493594ece49497",
         post_fetch_method=unpack
     ))
