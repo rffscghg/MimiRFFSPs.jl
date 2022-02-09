@@ -88,9 +88,9 @@ Most data inputs to this model and components are hosted on `Zenodo.com` and ret
 ```
 function __init__()
     register(DataDep(
-        "rffsps_v3",
+        "rffsps_v4",
         "RFF SPs prerelease version v3.",
-        "https://rffsps.s3.us-west-1.amazonaws.com/rffsps_v3.7z",
+        "https://rffsps.s3.us-west-1.amazonaws.com/rffsps_v4.7z",
         post_fetch_method=unpack
     ))
 end
