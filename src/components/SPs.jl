@@ -90,7 +90,7 @@ end
         #   GDP in billions of $2005 USD
        
         # Load Feather File
-        t = Arrow.Table(joinpath(datadep"rffsps_v4", "pop_income", "rffsp_pop_income_run_$(p.id).feather"))
+        t = Arrow.Table(joinpath(datadep"rffsps_v5", "pop_income", "rffsp_pop_income_run_$(p.id).feather"))
         fill_socioeconomics!(t.Year, t.Country, t.Pop, t.GDP, v.population, v.gdp, country_lookup, p.start_year, p.end_year)
 
         for year in p.start_year:5:p.end_year-5, country in country_indices
@@ -115,12 +115,12 @@ end
         # key between population trajectory and death rates - each population
         # trajectory is assigned to one of the 1000 death rates
         if !haskey(g_datasets, :pop_trajectory_key)
-            g_datasets[:pop_trajectory_key] = (load(joinpath(datadep"rffsps_v4", "sample_numbers", "sampled_pop_trajectory_numbers.csv")) |> DataFrame).x
+            g_datasets[:pop_trajectory_key] = (load(joinpath(datadep"rffsps_v5", "sample_numbers", "sampled_pop_trajectory_numbers.csv")) |> DataFrame).x
         end
         deathrate_trajectory_id = convert(Int64, g_datasets[:pop_trajectory_key][p.id])
         
         # Load Feather File
-        t = Arrow.Table(joinpath(datadep"rffsps_v4", "death_rates", "rffsp_death_rates_run_$(deathrate_trajectory_id).feather"))
+        t = Arrow.Table(joinpath(datadep"rffsps_v5", "death_rates", "rffsp_death_rates_run_$(deathrate_trajectory_id).feather"))
         fill_deathrates!(t.Year, t.ISO3, t.DeathRate, v.deathrate, country_lookup, p.start_year, p.end_year)
         # TODO could handle the repeating of years here instead of loading bigger files
 
@@ -132,13 +132,13 @@ end
         
         # add data to the global dataset if it's not there
         if !haskey(g_datasets, :ch4)
-            g_datasets[:ch4] = load(joinpath(datadep"rffsps_v4", "emissions", "rffsp_ch4_emissions.csv")) |> DataFrame
+            g_datasets[:ch4] = load(joinpath(datadep"rffsps_v5", "emissions", "rffsp_ch4_emissions.csv")) |> DataFrame
         end
         if !haskey(g_datasets, :n2o)
-            g_datasets[:n2o] = load(joinpath(datadep"rffsps_v4", "emissions", "rffsp_n2o_emissions.csv")) |> DataFrame
+            g_datasets[:n2o] = load(joinpath(datadep"rffsps_v5", "emissions", "rffsp_n2o_emissions.csv")) |> DataFrame
         end
         if !haskey(g_datasets, :co2)
-            g_datasets[:co2] = load(joinpath(datadep"rffsps_v4", "emissions", "rffsp_co2_emissions.csv")) |> DataFrame
+            g_datasets[:co2] = load(joinpath(datadep"rffsps_v5", "emissions", "rffsp_co2_emissions.csv")) |> DataFrame
         end
 
         # fill in the variales
@@ -150,7 +150,7 @@ end
         # Population and GDP 1990 Values
 
         if !haskey(g_datasets, :ypc1990)
-            g_datasets[:ypc1990] = load(joinpath(datadep"rffsps_v4", "ypc1990", "rffsp_ypc1990.csv")) |> 
+            g_datasets[:ypc1990] = load(joinpath(datadep"rffsps_v5", "ypc1990", "rffsp_ypc1990.csv")) |> 
                 DataFrame |> 
                 i -> insertcols!(i, :sample => 1:10_000) |> 
                 i -> stack(i, Not(:sample)) |> 
