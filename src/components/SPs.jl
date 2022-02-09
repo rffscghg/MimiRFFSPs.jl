@@ -115,7 +115,7 @@ end
         # key between population trajectory and death rates - each population
         # trajectory is assigned to one of the 1000 death rates
         if !haskey(g_datasets, :pop_trajectory_key)
-            g_datasets[:pop_trajectory_key] = (load(datadep"rffsps_v3", "sample_numbers", "sampled_pop_trajectory_numbers.csv") |> DataFrame).x
+            g_datasets[:pop_trajectory_key] = (load(datadep"rffsps_v4", "sample_numbers", "sampled_pop_trajectory_numbers.csv") |> DataFrame).x
         end
         deathrate_trajectory_id = convert(Int64, g_datasets[:pop_trajectory_key][p.id])
         

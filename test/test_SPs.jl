@@ -115,7 +115,7 @@ model_gdp_global = getdataframe(m, :SPs, :gdp_global) |> @filter(_.time in colle
 @test model_gdp_global.gdp_global ≈ (combine(socio_gdf, :GDP => sum).GDP_sum ./ 1e3 .* MimiRFFSPs.pricelevel_2011_to_2005)  atol = 1e-7 # slightly higher tolerance
 
 # check death rate
-pop_trajectory_key = (load(datadep"rffsps_v3", "sample_numbers", "sampled_pop_trajectory_numbers.csv") |> DataFrame).x
+pop_trajectory_key = (load(datadep"rffsps_v4", "sample_numbers", "sampled_pop_trajectory_numbers.csv") |> DataFrame).x
 deathrate_trajectory_id = convert(Int64, pop_trajectory_key[id])
         
 # Load Feather File
