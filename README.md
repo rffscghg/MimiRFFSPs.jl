@@ -4,11 +4,11 @@ This repository holds a component using the [Mimi](https://www.mimiframework.org
 
 ## Preparing the Software Environment
 
-To add the package to your current environment, run the following command at the julia package REPL:
+To add the package to your current environment, run the following command at the Julia package REPL:
 ```julia
-pkg> add https://github.com/anthofflab/MimiRFFSPs.jl.git
+pkg> add MimiRFFSPs
 ```
-You probably also want to install the Mimi package into your julia environment, so that you can use some of the tools in there:
+You probably also want to install the Mimi package into your Julia environment, so that you can use some of the tools in there:
 ```
 pkg> add Mimi
 ```
