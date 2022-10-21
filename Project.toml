@@ -21,7 +21,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 CSVFiles = "1.0.1"
-Interpolations = "0.13"
+Interpolations = "0.13, 0.14"
 Arrow = "2.3"
 Query = "1"
 Missings = "1"

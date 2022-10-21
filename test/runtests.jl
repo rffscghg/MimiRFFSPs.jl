@@ -1,4 +1,5 @@
 using Test
+ENV["DATADEPS_ALWAYS_ACCEPT"] = "true"
 
 @testset "SPs Component" begin
     include("test_SPs.jl")
