@@ -1,5 +1,3 @@
-using Mimi
-
 @defcomp RegionAggregatorSum begin
     
     inputregions = Index()

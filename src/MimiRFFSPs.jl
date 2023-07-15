@@ -1,6 +1,15 @@
 module MimiRFFSPs
 
-using DataDeps
+using Mimi,
+    CSVFiles,
+    DataDeps,
+    DataFrames,
+    Query,
+    Interpolations,
+    Arrow,
+    CategoricalArrays
+
+import IteratorInterfaceExtensions
 
 global g_datasets = Dict{Symbol,Any}()
 
