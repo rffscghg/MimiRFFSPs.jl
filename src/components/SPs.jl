@@ -26,29 +26,27 @@ function fill_deathrates!(source_Year, source_ISO3, source_DeathRate, deathrate,
     end
 end
 
-function fill_emissions!(source, emissions_var, sample_id, start_year, end_year)
-    for row in source
-        if row.year >= start_year && row.year <= end_year && row.sample == sample_id
-            year_index = TimestepIndex(row.year - start_year + 1)
-            # year_index = TimestepValue(row.year) # current bug in Mimi
-            emissions_var[year_index] = row.value
+function fill_emissions!(source_year, source_value, emissions_var, start_year, end_year)
+    for (t,v) in zip(source_year, source_value)
+        if start_year <= t end_year
+            year_index = TimestepIndex(t - start_year + 1)
+            emissions_var[year_index] = v
         end
     end
 end
 
-function fill_population1990!(source, population1990, country_lookup)
-    for row in source
-        country_index = country_lookup[row.ISO3]
-        population1990[country_index] = row.Population # millions
+function fill_population1990!(source_country, source_population, population1990, country_lookup)
+    for (country, population) in zip(source_country, source_population)
+        country_index = country_lookup[country]
+        population1990[country_index] = population # millions
     end
 end
 
-function fill_gdp1990!(source, gdp1990, population1990, country_lookup, sample_id)
-    for row in source
-        if row.sample == sample_id
-            country_index = country_lookup[row.country]
-            gdp1990[country_index] = (row.value * population1990[country_index]) .* pricelevel_2011_to_2005 ./ 1e3 # convert $2011 to $2005 and divide by 1e3 to get millions -> billions
-        end
+function fill_gdp1990!(source_country, source_ypc, gdp1990, population1990, country_lookup)
+    for (country, ypc) in zip(source_country, source_ypc)
+        country_index = country_lookup[country]
+
+        gdp1990[country_index] = (ypc * population1990[country_index]) .* pricelevel_2011_to_2005 ./ 1e3 # convert $2011 to $2005 and divide by 1e3 to get millions -> billions
     end
 end
 
@@ -129,19 +127,34 @@ end
         
         # add data to the global dataset if it's not there
         if !haskey(g_datasets, :ch4)
-            g_datasets[:ch4] = load(joinpath(datadep"rffsps_v5", "emissions", "rffsp_ch4_emissions.csv")) |> DataFrame
+            g_datasets[:ch4] = load(joinpath(datadep"rffsps_v5", "emissions", "rffsp_ch4_emissions.csv")) |> 
+            @groupby(_.sample) |>
+            @orderby(key(_)) |>
+            @map(DataFrame(year=_.year, value=_.value)) |>
+            collect
         end
         if !haskey(g_datasets, :n2o)
-            g_datasets[:n2o] = load(joinpath(datadep"rffsps_v5", "emissions", "rffsp_n2o_emissions.csv")) |> DataFrame
+            g_datasets[:n2o] = load(joinpath(datadep"rffsps_v5", "emissions", "rffsp_n2o_emissions.csv")) |> 
+            @groupby(_.sample) |>
+            @orderby(key(_)) |>
+            @map(DataFrame(year=_.year, value=_.value)) |>
+            collect
         end
         if !haskey(g_datasets, :co2)
-            g_datasets[:co2] = load(joinpath(datadep"rffsps_v5", "emissions", "rffsp_co2_emissions.csv")) |> DataFrame
+            g_datasets[:co2] = load(joinpath(datadep"rffsps_v5", "emissions", "rffsp_co2_emissions.csv")) |> 
+            @groupby(_.sample) |>
+            @orderby(key(_)) |>
+            @map(DataFrame(year=_.year, value=_.value)) |>
+            collect
         end
 
         # fill in the variales
-        fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:ch4]), v.ch4_emissions, p.id, p.start_year, p.end_year)
-        fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:co2]), v.co2_emissions, p.id, p.start_year, p.end_year)
-        fill_emissions!(IteratorInterfaceExtensions.getiterator(g_datasets[:n2o]), v.n2o_emissions, p.id, p.start_year, p.end_year)
+        ch4_dataset = g_datasets[:ch4][p.id]
+        n2o_dataset = g_datasets[:n2o][p.id]
+        co2_dataset = g_datasets[:co2][p.id]
+        fill_emissions!(ch4_dataset.year, ch4_dataset.value, v.ch4_emissions, p.start_year, p.end_year)
+        fill_emissions!(co2_dataset.year, co2_dataset.value, v.co2_emissions, p.start_year, p.end_year)
+        fill_emissions!(n2o_dataset.year, n2o_dataset.value, v.n2o_emissions, p.start_year, p.end_year)
 
         # ----------------------------------------------------------------------
         # Population and GDP 1990 Values
@@ -151,16 +164,21 @@ end
                 DataFrame |> 
                 i -> insertcols!(i, :sample => 1:10_000) |> 
                 i -> stack(i, Not(:sample)) |> 
-                DataFrame |> 
                 i -> rename!(i, [:sample, :country, :value]) |> 
-                DataFrame
+                @groupby(_.sample) |>
+                @orderby(key(_)) |>
+                @map(DataFrame(country=_.country, value=_.value)) |>
+                collect
         end
         if !haskey(g_datasets, :pop1990)
             g_datasets[:pop1990] = load(joinpath(@__DIR__, "..", "..", "data/population1990.csv")) |> DataFrame
         end
 
-        fill_population1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:pop1990]), v.population1990, country_lookup)
-        fill_gdp1990!(IteratorInterfaceExtensions.getiterator(g_datasets[:ypc1990]), v.gdp1990, v.population1990, country_lookup, p.id)
+        pop90_dataset = g_datasets[:pop1990]
+        fill_population1990!(pop90_dataset.ISO3, pop90_dataset.Population, v.population1990, country_lookup)
+
+        ypc90_dataset = g_datasets[:ypc1990][p.id]
+        fill_gdp1990!(ypc90_dataset.country, ypc90_dataset.value, v.gdp1990, v.population1990, country_lookup)
 
     end
 
