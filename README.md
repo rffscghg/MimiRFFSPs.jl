@@ -101,5 +101,4 @@ Details on any files hosted within this repository in the `data` folder can be f
 
 ## Citations
 
-Rennert, K. et al. The Social Cost of Carbon: Advances in Long-Term Probabilistic Projections of Population, GDP, Emissions, and Discount Rates. Brook. Pap. Econ. Act. (Forthcoming).
-
+Rennert, K. et al. (2022) ‘The Social Cost of Carbon: Advances in Long-Term Probabilistic Projections of Population, GDP, Emissions, and Discount Rates’, Brookings Papers on Economic Activity, 2021(2), pp. 223–305. Available at: https://doi.org/10.1353/eca.2022.0003.
