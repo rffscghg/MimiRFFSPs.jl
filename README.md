@@ -21,7 +21,7 @@ The basic way to access the MimiRFFSPs components, both `RFF-SPs` and `RegionAgg
 
 ### Running the Model
 
-To obtain the default version of the model, use the `get_model` function.
+To obtain the default version of the model, you may use the `get_model` function:
 
 ```julia
 using MimiRFFSPs
@@ -36,7 +36,7 @@ run(m)
 explore(m)
 
 # Access a specific variable
-emissions = m[:SPs, :gdp]
+emissions = m[:rffsp, :gdp]
 ```
 
 For some insight on the innerworkings of the `get_model` function, the following code uses the required `Mimi` functions to build the model and will return the same results.
@@ -96,6 +96,10 @@ results = run(mcs, m, 10)
 # Explore the resulting distributions of co2 emissions and ID
 explore(results)
 
+# Get tabular data on outputs
+ids = getdataframe(results, :rffsp, :id)
+co2_emissions = getdataframe(results, :rffsp, :co2_emissions)
+
 # Alternatively run the Monte Carlo Simulation on model `m` for sample ids 1,2, and 3
 # note here that `num_trials` provided (3) must be shorter than or equal to the 
 # length of the provided vector of IDs
@@ -103,7 +107,6 @@ mcs = MimiRFFSPs.get_mcs([1,2,3])
 Mimi.add_save!(mcs, (:rffsp, :id))
 Mimi.add_save!(mcs, (:rffsp, :co2_emissions))
 results = run(mcs, m, 3)
-explore(results)
 
 ```
 
