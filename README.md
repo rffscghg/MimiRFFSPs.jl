@@ -17,6 +17,26 @@ pkg> add Mimi
 
 The model uses the Mimi framework and it is highly recommended to read the Mimi documentation first to understand the code structure. This model presents two components, which will most often be used in tandem. The basic way to access the MimiRFFSPs components, both `RFF-SPs` and `RegionAggregatorSum` and explore the results is the following:
 
+To obtain the default version of the model, use the `get_model` function.
+
+```julia
+using MimiRFFSPs
+
+# Build the default model
+m = MimiRFFSPs.get_model()
+
+# Run the model
+run(m)
+
+# Explore interactive plots of all the model output.
+explore(m)
+
+# Access a specific variable
+emissions = m[:SPs, :gdp]
+```
+
+For some insight on the innerworkings of the `get_model` function, the following code uses the required `Mimi` functions to build the model and will return the same results.
+
 ```julia
 using Mimi 
 using MimiRFFSPs
@@ -28,13 +48,12 @@ m = Model()
 set_dimension!(m, :time, 1750:2300)
 
 # Add the Sps component as imported from `MimiRFFSPs`
-
-add_comp!(m, MimiRFFSPs.SPs, first = 2020, last = 2300)
+add_comp!(m, MimiRFFSPs.SPs, :rffsp, first = 2020, last = 2300) # note we name the component :rffsp here
 
 # Set country dimension and related parameter: As of now this must be exactly the 184 countries in the following file, but we will add flexibility for this in the future.
 all_countries = load(joinpath(@__DIR__, "data", "keys", "MimiRFFSPs_ISO3.csv")) |> DataFrame
 set_dimension!(m, :country, all_countries.ISO3)
-update_param!(m, :SPs, :country_names, all_countries.ISO3) # should match the dimension
+update_param!(m, :rffsp, :country_names, all_countries.ISO3) # should match the dimension
 
 # Run the model
 run(m)
@@ -43,13 +62,47 @@ run(m)
 explore(m)
 
 # Access a specific variable
-emissions = m[:SPs, :gdp]
+emissions = m[:rffsp, :gdp]
 ```
-The `id` parameter in this component (default id of 6546) which allows one to run the model with a specified parameter set of ID `id` within the data.  By nature of these projections, this component should be run using a Monte Carlo Simulation sampling over the IDs in order to obtain a representative distribution of plausible outcomes, but providing an ID may be useful for debugging purposes. See the section below for more information.
+Importantly, also note that the `rffsp` component has optional arguments `start_year` (default = 2020) and `end_year` (default = 2300) that can be altered to values within the 2020 - 2300 timeframe.  Timesteps must be annual.
 
-Also note that the `SPs` component has optional arguments `start_year` (default = 2020) and `end_year` (default = 2300) that can be altered to values within the 2020 - 2300 timeframe.  Timesteps must be annual as of now, but we will add flexibility to this in the future.
+### The `id` parameter and Monte Carlo Simulations
 
----
+The `id` parameter in this component (default id of 6546) which allows one to run the model with a specified parameter set of ID `id` within the data.  By nature of these projections, this component should be run using a Monte Carlo Simulation sampling over the IDs in order to obtain a representative distribution of plausible outcomes, but providing an ID may be useful for debugging purposes. 
+
+The `get_mcs` function defines a simple Monte Carlo simulation. It returns a `Mimi.SimulationDef` obect, which can be `run` and explore using the [`run` function](https://www.mimiframework.org/Mimi.jl/stable/howto/howto_3/#.-The-[run](@ref)-function-1) and more generally the [Mimi API for Monte Carlo Simulations](https://www.mimiframework.org/Mimi.jl/stable/howto/howto_3/). By default the mcs assigns random variable taking on values of 1 through 10,000 with equal probability to the sample ID `id`, alternatively the user may provide a predetermined vector of `sampling_ids` holding the Integer values of the samples they would like run, in order.
+
+```julia
+using Mimi
+using MimiRFFSPs
+
+# get the SimulationDef
+mcs = MimiRFFSPs.get_mcs()
+
+# run the Monte Carlo Simulation on model `m` for 10 trials and return the results
+m = MimiRFFSPs.get_model()
+
+# Add some data to save
+Mimi.add_save!(mcs, (:rffsp, :id))
+Mimi.add_save!(mcs, (:rffsp, :co2_emissions))
+
+# run the mcs
+results = run(mcs, m, 10)
+
+# Explore the resulting distributions of co2 emissions and ID
+explore(results)
+
+# Alternatively run the Monte Carlo Simulation on model `m` for sample ids 1,2, and 3
+# note here that `num_trials` provided (3) must be shorter than or equal to the 
+# length of the provided vector of IDs
+mcs = MimiRFFSPs.get_mcs([1,2,3])
+Mimi.add_save!(mcs, (:rffsp, :id))
+Mimi.add_save!(mcs, (:rffsp, :co2_emissions))
+results = run(mcs, m, 3)
+explore(results)
+
+```
+### Aggregating by Region
 
 If a user wants to connect the `m[:SPs, :population]` output variable to another Mimi component that requires population at a more aggregated regional level, the `RegionAggregatorSum` component can be helpful. This helper component aggregates countries to regions with a provided mapping via the `sum` function (other functions can be added as desired, this is a relatively new and nimble component). You will need to provide a mapping between the input regions (countries here) and output regions (regions here) in a Vector of the length of the input regions and each element being one of the output regions. Note that this component is not yet optimized for performance.
 
