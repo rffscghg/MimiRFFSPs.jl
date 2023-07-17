@@ -9,6 +9,10 @@ end
     include("test_RegionAggregatorSum.jl")
 end
 
+@testset "API" begin
+    include("test_API.jl")
+end
+
 @testset "Coupled" begin
     include("test_Coupled.jl")
 end
