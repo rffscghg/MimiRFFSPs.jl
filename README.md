@@ -39,7 +39,7 @@ explore(m)
 emissions = m[:rffsp, :gdp]
 ```
 
-For some insight on the innerworkings of the `get_model` function, the following code uses the required `Mimi` functions to build the model and will return the same results.
+For some insight on the innerworkings of the `get_model` function, the following code uses the required `Mimi` functions to build the model and will return the same results. Note that here we rename the `SPs` component `rffsp` for clarity, but without that Symbol in the `add_comp!` call the component will default to the name `:SPs`.
 
 ```julia
 using Mimi 
@@ -133,7 +133,7 @@ update_param!(m, :PopulationAggregator, :output_region_names, outputregions)
 update_param!(m, :PopulationAggregator, :input_output_mapping, mapping.Output_Region) # Vector with length of input regions, each element matching an output region in the output_region_names parameter (and outputregions dimension)
 
 # Make SPs component `:population` variable the feed into the `:input` variable of the `PopulationAggregator` component
-connect_param!(m, :PopulationAggregator, :input, :SPs, :population)
+connect_param!(m, :PopulationAggregator, :input, :rffsp, :population)
 
 run(m)
 
