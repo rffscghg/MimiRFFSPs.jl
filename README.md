@@ -37,6 +37,7 @@ explore(m)
 
 # Access a specific variable
 emissions = m[:rffsp, :gdp]
+emissions_df = getdataframe(m, :rffsp, :gdp)
 ```
 
 For some insight on the innerworkings of the `get_model` function, the following code uses the required `Mimi` functions to build the model and will return the same results. Note that here we rename the `SPs` component `rffsp` for clarity, but without that Symbol in the `add_comp!` call the component will default to the name `:SPs`.
@@ -67,6 +68,7 @@ explore(m)
 
 # Access a specific variable
 emissions = m[:rffsp, :gdp]
+emissions_df = getdataframe(m, :rffsp, :gdp)
 ```
 Importantly, also note that the `rffsp` component has optional arguments `start_year` (default = 2020) and `end_year` (default = 2300) that can be altered to values within the 2020 - 2300 timeframe.  Timesteps must be annual.
 
