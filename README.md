@@ -19,7 +19,7 @@ The model uses the Mimi framework and it is highly recommended to read the Mimi 
 
 The basic way to access the MimiRFFSPs components, both `RFF-SPs` and `RegionAggregatorSum`, run a model or a Monte Carlo Simulation, and explore the results is the following
 
-#### Running the Model
+### Running the Model
 
 To obtain the default version of the model, use the `get_model` function.
 
@@ -70,7 +70,7 @@ emissions = m[:rffsp, :gdp]
 ```
 Importantly, also note that the `rffsp` component has optional arguments `start_year` (default = 2020) and `end_year` (default = 2300) that can be altered to values within the 2020 - 2300 timeframe.  Timesteps must be annual.
 
-#### The `id` parameter and Monte Carlo Simulations
+### The `id` parameter and Monte Carlo Simulations
 
 The `id` parameter in this component (default id of 6546) which allows one to run the model with a specified parameter set of ID `id` within the data.  By nature of these projections, this component should be run using a Monte Carlo Simulation sampling over the IDs in order to obtain a representative distribution of plausible outcomes, but providing an ID may be useful for debugging purposes. 
 
@@ -106,7 +106,8 @@ results = run(mcs, m, 3)
 explore(results)
 
 ```
-#### Aggregating by Region
+
+### Aggregating by Region
 
 If a user wants to connect the `m[:SPs, :population]` output variable to another Mimi component that requires population at a more aggregated regional level, the `RegionAggregatorSum` component can be helpful. This helper component aggregates countries to regions with a provided mapping via the `sum` function (other functions can be added as desired, this is a relatively new and nimble component). You will need to provide a mapping between the input regions (countries here) and output regions (regions here) in a Vector of the length of the input regions and each element being one of the output regions. Note that this component is not yet optimized for performance.
 
