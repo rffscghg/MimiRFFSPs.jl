@@ -9,7 +9,6 @@ using MimiRFFSPs
 # basic function
 m = MimiRFFSPs.get_model()
 run(m)
-explore(m)
 
 # validation
 tolerance = 1e-9
