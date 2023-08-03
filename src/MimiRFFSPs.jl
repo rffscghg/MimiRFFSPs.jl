@@ -47,7 +47,7 @@ function get_mcs(sampling_ids::Union{Vector{Int}, Nothing} = nothing)
     mcs = @defsim begin
     end
 
-    distrib = isnothing(sampling_ids) ? EmpiricalDistribution(collect(1:10_000)) : SampleStore(sampling_ids)
+    distrib = isnothing(sampling_ids) ? Mimi.EmpiricalDistribution(collect(1:10_000)) : Mimi.SampleStore(sampling_ids)
     Mimi.add_RV!(mcs, :socio_id_rv, distrib)
     Mimi.add_transform!(mcs, :rffsp, :id, :(=), :socio_id_rv)
 

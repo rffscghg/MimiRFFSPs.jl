@@ -12,3 +12,7 @@ end
 @testset "Coupled" begin
     include("test_Coupled.jl")
 end
+
+@testset "API" begin
+    include("test_API.jl")
+end
