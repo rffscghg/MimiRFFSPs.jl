@@ -163,7 +163,7 @@ end
             g_datasets[:ypc1990] = load(joinpath(datadep"rffsps_v5", "ypc1990", "rffsp_ypc1990.csv")) |> 
                 DataFrame |> 
                 i -> insertcols!(i, :sample => 1:10_000) |> 
-                i -> DataFrames.stack(i, Not(:sample)) |> 
+                i -> stack(i, Not(:sample)) |> 
                 i -> rename!(i, [:sample, :country, :value]) |> 
                 @groupby(_.sample) |>
                 @orderby(key(_)) |>
