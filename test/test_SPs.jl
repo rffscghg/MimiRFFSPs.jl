@@ -159,7 +159,7 @@ population1990 = load(joinpath(@__DIR__, "..", "data", "population1990.csv")) |>
 ypc1990 = load(joinpath(datadep"rffsps_v5", "ypc1990", "rffsp_ypc1990.csv")) |> 
                 DataFrame |> 
                 i -> insertcols!(i, :sample => 1:10_000) |> 
-                i -> stack(i, Not(:sample)) |> 
+                i -> DataFrames.stack(i, Not(:sample)) |> 
                 DataFrame |> 
                 @filter(_.sample == id) |>
                 DataFrame |>
