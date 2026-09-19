@@ -9,12 +9,12 @@ m = Model()
 set_dimension!(m, :time, 2000:2300)
 
 # Handle the MimiRFFSPs.SPs component
-add_comp!(m, MimiRFFSPs.SPs, first = 2020)
+add_comp!(m, MimiRFFSPs.SPs, first=2020)
 set_dimension!(m, :country, inputregions)
 update_param!(m, :SPs, :country_names, inputregions)
 
 # Handle the MimiRFFSPs.RegionAggregatorSum component
-add_comp!(m, MimiRFFSPs.RegionAggregatorSum, first = 2020)
+add_comp!(m, MimiRFFSPs.RegionAggregatorSum, first=2020)
 
 set_dimension!(m, :inputregions, inputregions)
 set_dimension!(m, :outputregions, outputregions)
@@ -28,7 +28,7 @@ connect_param!(m, :RegionAggregatorSum, :input, :SPs, :population)
 run(m)
 
 # Should also work if Aggregator runs long, using backup data
-Mimi.set_first_last!(m, :RegionAggregatorSum, first = 2000)
+Mimi.set_first_last!(m, :RegionAggregatorSum, first=2000)
 backup = zeros(301, 184)
 connect_param!(m, :RegionAggregatorSum, :input, :SPs, :population, backup, ignoreunits=true)
 
